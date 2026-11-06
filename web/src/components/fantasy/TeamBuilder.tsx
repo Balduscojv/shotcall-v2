@@ -7,6 +7,8 @@ import { fmoney, fpoints, fvariation, roleLabel, roleOf, slots } from "@/lib/fan
 import { onTeamAccent, teamAccent } from "@/lib/games";
 import type { FantasySlot, FantasyTeam, MarketPlayer, Team } from "@/lib/types";
 import { buttonClass } from "@/components/ui/button";
+import { BoostCard } from "./BoostCard";
+import { Flame, OnFire } from "./Flame";
 
 type Draft = Record<FantasySlot, MarketPlayer | null>;
 type Sort = "price" | "average" | "games";
@@ -33,7 +35,7 @@ function initialDraft(team: FantasyTeam | null, market: MarketPlayer[]): Draft {
 
 /**
  * Montar o time com o mercado aberto: a quadra com as 5 vagas e o mercado ao lado. Clicar numa
- * vaga filtra o mercado pela posição; "2X" escolhe o cestinha. Nada é salvo até "Salvar time".
+ * vaga filtra o mercado pela posição; o foguinho escolhe o cestinha. Nada é salvo até "Salvar time".
  */
 export function TeamBuilder({
   team,
@@ -156,28 +158,26 @@ export function TeamBuilder({
                   aria-label={p ? `${roleLabel[s]}: ${p.name}. Trocar` : `Escalar ${roleLabel[s].toLowerCase()} (${s})`}
                   className={`relative flex size-14 items-center justify-center rounded-full border-[3px] font-display text-xs sm:size-16 ${
                     active ? "outline-[3px] outline-offset-2 outline-lime" : ""
-                  } ${p ? "border-ink text-chalk" : "border-dashed border-chalk/60 bg-ink/40 text-chalk/80"} ${isC ? "shadow-[0_0_0_3px_var(--color-yellow),0_0_18px_rgba(255,200,61,.6)]" : ""}`}
+                  } ${p ? "border-ink text-chalk" : "border-dashed border-chalk/60 bg-ink/40 text-chalk/80"} ${isC ? "animate-on-fire" : ""}`}
                   style={p && t ? { background: teamAccent(t), color: onTeamAccent(t) } : undefined}
                 >
                   {p ? t?.tricode : "+"}
-                  {isC && (
-                    <span className="absolute -right-2 -bottom-1 rotate-6 rounded-md border-2 border-ink bg-yellow px-1 font-display text-[10px] text-ink">2X</span>
-                  )}
+                  {isC && <OnFire />}
                 </button>
                 <span className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[11px] font-extrabold sm:text-xs ${isC ? "bg-yellow text-ink" : "bg-ink text-chalk"}`}>
                   {p ? `${p.name.split(" ").slice(-1)[0]} · ${s}` : `${roleLabel[s]} · ${s}`}
                 </span>
                 {p && (
                   <span className="flex items-center gap-1">
-                    <span className="text-[11px] font-bold text-muted">{fmoney(p.price)}</span>
+                    <span className="text-[11px] font-bold whitespace-nowrap text-muted">{fmoney(p.price)}</span>
                     <button
                       type="button"
                       onClick={() => setCestinha(p.id)}
                       aria-pressed={isC}
                       aria-label={`Fazer ${p.name} cestinha (pontuação em dobro)`}
-                      className={`h-6 rounded-md px-1.5 font-display text-[10px] ${isC ? "bg-yellow text-ink" : "bg-ink/70 text-yellow hover:bg-ink"}`}
+                      className={`flex h-6 w-7 items-center justify-center rounded-md ${isC ? "bg-yellow" : "bg-ink/70 hover:bg-ink"}`}
                     >
-                      2X
+                      <Flame lit={isC} size={11} />
                     </button>
                     <button
                       type="button"
@@ -209,7 +209,7 @@ export function TeamBuilder({
               <p className="font-bold text-lime">Time salvo. Dá para mexer até o mercado fechar.</p>
             ) : !complete ? (
               <p className="text-subtle">
-                {picked.length < 5 ? `Faltam ${5 - picked.length} jogador(es).` : "Escolha o cestinha: toque em 2X num dos jogadores."}
+                {picked.length < 5 ? `Faltam ${5 - picked.length} jogador(es).` : "Escolha o cestinha: toque no foguinho de um dos jogadores."}
               </p>
             ) : dirty ? (
               <p className="text-subtle">Alterações não salvas.</p>
@@ -218,26 +218,37 @@ export function TeamBuilder({
             )}
           </div>
         </div>
+        <BoostCard boost={team?.boost ?? null} />
       </div>
 
       <section aria-labelledby="h-mercado" className="flex min-w-0 flex-col gap-3">
         <h2 id="h-mercado" className="font-display text-lg">MERCADO</h2>
         {/* Uma vaga por posição: escolher a posição é escolher a vaga. */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1" role="group" aria-label="Posição">
+        <div className="grid grid-cols-5 gap-1.5" role="group" aria-label="Posição">
           {slots.map((r) => {
             const active = slot === r;
+            const filled = !!draft[r];
             return (
               <button
                 key={r}
                 type="button"
                 aria-pressed={active}
+                aria-label={`${roleLabel[r]} (${r})${filled ? `: ${draft[r]!.name}` : ": vaga vazia"}`}
                 onClick={() => setSlot(r)}
-                className={`flex shrink-0 flex-col items-center rounded-xl px-3 py-1.5 ${
-                  active ? "bg-chalk text-ink" : draft[r] ? "bg-surface text-chalk" : "bg-surface text-muted ring-2 ring-lime/50 hover:text-chalk"
+                className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1 py-2 transition-colors ${
+                  active ? "border-ink bg-chalk text-ink shadow-hard-sm" : "border-surface bg-panel text-chalk hover:border-chalk/60"
                 }`}
               >
-                <span className="font-display text-sm leading-none">{r}</span>
-                <span className="text-[10px] font-bold">{roleLabel[r]}</span>
+                <span className="font-display text-base leading-none">{r}</span>
+                <span className={`max-w-full text-center text-[9px] leading-tight font-bold break-words sm:text-[11px] ${active ? "text-ink/70" : "text-muted"}`}>{roleLabel[r]}</span>
+                {filled && (
+                  <span
+                    className={`absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full border-2 border-ink text-[8px] font-black ${active ? "bg-ink text-chalk" : "bg-lime text-ink"}`}
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                )}
               </button>
             );
           })}

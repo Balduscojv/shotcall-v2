@@ -7,11 +7,12 @@ use App\Models\Game;
 use App\Models\PlayerPrice;
 use App\Models\PlayerRoundScore;
 use App\Models\Round;
+use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Support\Facades\DB;
 
 /**
  * Apuração da rodada, quando o último jogo dela termina:
- * 1. pontos de cada time (soma dos 5, cestinha em dobro);
+ * 1. pontos de cada time: soma dos 5 (cestinha em dobro) × (1 + boost de palpites);
  * 2. preços da próxima rodada (valorização pela média na rodada);
  * 3. o time segue para a próxima rodada com os mesmos jogadores, e o patrimônio passa a ser
  *    saldo + valor do time nos preços novos;
@@ -23,6 +24,9 @@ class RoundSettlement
         private PriceVariation $pricing,
         private FantasyMarket $market,
         private FantasyTeamService $teams,
+        private ShotCallBoost $boost,
+        private GameScoring $scoring,
+        private ShotCallService $shotCalls,
     ) {}
 
     /** Rodadas travadas que já acabaram e não têm jogo pendente. */
@@ -34,6 +38,21 @@ class RoundSettlement
             ->count();
     }
 
+    /**
+     * O fim de cada jogo roda na fila (pontuação e palpites). Se a rodada for apurada antes de a
+     * fila chegar no último jogo, faz aqui o que faltou. Repetir não muda nada.
+     */
+    private function finishPendingGames(Round $round): void
+    {
+        Game::where('round_id', $round->id)->where('status', 'FINAL')
+            ->where(fn ($q) => $q->whereDoesntHave('scores')->orWhereHas('shotCalls', fn ($c) => $c->whereIn('status', ['OPEN', 'LOCKED'])))
+            ->get()
+            ->each(function (Game $game) {
+                $this->scoring->save($game);
+                $this->shotCalls->settle($game);
+            });
+    }
+
     public function settle(Round $round): void
     {
         if ($round->market_status !== Round::LOCKED) {
@@ -41,6 +60,7 @@ class RoundSettlement
         }
         $round->update(['market_status' => Round::SETTLING]);
         $next = $round->next();
+        $this->finishPendingGames($round);
 
         DB::transaction(function () use ($round, $next) {
             $scores = PlayerRoundScore::where('round_id', $round->id)->get()->keyBy('player_id');
@@ -60,8 +80,11 @@ class RoundSettlement
             }
 
             $points = $scores->map(fn ($s) => ['points' => (float) $s->points, 'games' => (int) $s->games, 'live' => false]);
-            FantasyTeam::with('players')->where('round_id', $round->id)->get()->each(function (FantasyTeam $team) use ($points, $next, $newPrices) {
-                $team->update(['points' => $this->teams->teamPoints($team, $points)]);
+            FantasyTeam::with('players')->where('round_id', $round->id)->get()->each(function (FantasyTeam $team) use ($points, $next, $newPrices, $round) {
+                // Pontos dos 5 (cestinha em dobro) × (1 + boost dos palpites da rodada).
+                $base = $this->teams->teamPoints($team, $points);
+                $boost = $this->boost->forUser($team->user_id, $round)['boost'];
+                $team->update(['base_points' => $base, 'boost' => $boost, 'points' => ShotCallBoost::apply($base, $boost)]);
                 if (! $next || FantasyTeam::where('user_id', $team->user_id)->where('round_id', $next->id)->exists()) {
                     return;
                 }

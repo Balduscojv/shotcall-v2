@@ -3,6 +3,7 @@
 use App\Events\GameFinished;
 use App\Models\FantasyTeam;
 use App\Models\Game;
+use App\Models\GameShotCall;
 use App\Models\Player;
 use App\Models\PlayerGameScore;
 use App\Models\PlayerGameStat;
@@ -13,6 +14,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Services\Fantasy\FantasyMarket;
 use App\Services\Fantasy\RoundSettlement;
+use App\Services\Fantasy\ShotCallBoost;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Carbon;
 
@@ -207,4 +209,53 @@ it('apura a rodada: pontos, valorização e o time segue para a próxima', funct
         ->and((float) $next->patrimony)->toBe(round(35 + $value, 2));
 
     $this->getJson('/api/fantasy/team')->assertJsonPath('data.round.number', 5)->assertJsonPath('data.team.patrimony', round(35 + $value, 2));
+});
+
+it('os acertos de palpite nos jogos da rodada viram boost nos pontos do time', function () {
+    app(FantasyMarket::class)->open($this->r4);
+    $this->actingAs($this->ana);
+    $this->putJson('/api/fantasy/team', lineup())->assertOk();
+
+    // Palpite no jogo de segunda (rodada 4): BOS vence por 6–10 com o Jogador 1 de MVP.
+    $this->putJson("/api/games/{$this->monday->id}/shot-call", ['winner_team_id' => $this->bos->id, 'margin_band' => 'M16_PLUS', 'mvp_player_id' => 1])->assertOk();
+    // Palpite num jogo de outra rodada não conta.
+    $other = fantasyGame('401000902', '2026-11-16 19:00', $this->r5);
+    $this->putJson("/api/games/{$other->id}/shot-call", ['winner_team_id' => $this->bos->id, 'margin_band' => 'M1_5', 'mvp_player_id' => 1])->assertOk();
+
+    Carbon::setTestNow(Carbon::parse('2026-11-09 23:00', 'America/New_York'));
+    app(FantasyMarket::class)->lockStarted();
+    $this->monday->update(['status' => 'FINAL', 'home_score' => 108, 'away_score' => 100]);
+    foreach ([1 => 50, 2 => 4, 4 => 30, 5 => 16, 7 => 24] as $id => $pts) {
+        PlayerGameStat::create(['game_id' => $this->monday->id, 'player_id' => $id, 'team_id' => Player::find($id)->team_id, 'pts' => $pts]);
+    }
+    GameFinished::dispatch($this->monday);
+
+    // Acertou vencedor (+1%) e MVP (+3%), errou a margem: boost de 4% já aparece na parcial.
+    $team = $this->getJson('/api/fantasy/team')->assertOk()->json('data.team');
+    expect($team['base_points'])->toEqual(174)
+        ->and($team['boost'])->toMatchArray(['value' => 0.04, 'calls' => 1, 'cap' => 0.3, 'hits' => ['winner' => 1, 'margin' => 0, 'mvp' => 1]])
+        ->and($team['points'])->toEqual(180.96);
+
+    Carbon::setTestNow(Carbon::parse('2026-11-16 08:00', 'America/New_York'));
+    app(RoundSettlement::class)->settleFinished();
+
+    expect(FantasyTeam::where('round_id', $this->r4->id)->first())
+        ->base_points->toEqual(174)->boost->toEqual(0.04)->points->toEqual(180.96);
+});
+
+it('o boost tem teto por rodada', function () {
+    app(FantasyMarket::class)->open($this->r4);
+    $this->actingAs($this->ana);
+    $this->putJson('/api/fantasy/team', lineup())->assertOk();
+
+    // 12 jogos acertados em cheio (+6% cada = 72%) ficam em +30%.
+    for ($i = 0; $i < 12; $i++) {
+        $g = fantasyGame('40100100'.str_pad((string) $i, 2, '0', STR_PAD_LEFT), '2026-11-10 20:00', $this->r4, 'FINAL');
+        GameShotCall::create(['user_id' => $this->ana->id, 'game_id' => $g->id, 'winner_team_id' => $this->bos->id,
+            'margin_band' => 'M6_10', 'mvp_player_id' => 1, 'status' => 'SETTLED', 'correct' => 3, 'points' => 6,
+            'markets' => ['winner' => true, 'margin' => true, 'mvp' => true], 'settled_at' => now()]);
+    }
+
+    $boost = app(ShotCallBoost::class)->forUser($this->ana->id, $this->r4);
+    expect($boost)->toMatchArray(['boost' => 0.3, 'raw' => 0.72, 'calls' => 12]);
 });

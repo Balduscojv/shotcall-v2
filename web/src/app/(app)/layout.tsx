@@ -11,23 +11,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="fence border-b-[3px] border-ink">
-        <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-6">
-          <Logo href="/perfil" compact />
-          <nav aria-label="Principal" className="flex items-center gap-0.5 sm:gap-3">
+        {/* No celular: logo e Sair na primeira linha, o menu na segunda. No computador, tudo numa linha. */}
+        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 sm:px-6">
+          <Logo href="/perfil" />
+          <div className="sm:order-last">
+            <LogoutButton />
+          </div>
+          <nav aria-label="Principal" className="-mx-2 flex w-full items-center justify-between gap-0.5 sm:mx-0 sm:ml-auto sm:w-auto sm:justify-end sm:gap-3">
             <Suspense fallback={null}>
               <AdminNavLink />
             </Suspense>
             <Link href="/jogos" className={navLink}>
-              Jogos
+              Calendário
             </Link>
             <Link href="/time" className={navLink}>
-              Time
+              Escale seu time
             </Link>
             <Link href="/perfil" className={navLink}>
               <span className="sm:hidden">Perfil</span>
               <span className="hidden sm:inline">Meu perfil</span>
             </Link>
-            <LogoutButton />
           </nav>
         </div>
       </header>

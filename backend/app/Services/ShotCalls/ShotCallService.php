@@ -144,7 +144,7 @@ class ShotCallService
             ->each(function (GameShotCall $call) use ($result, &$settled) {
                 DB::transaction(function () use ($call, $result) {
                     $r = $this->check($call, $result);
-                    $call->update(['status' => 'SETTLED', 'correct' => $r['correct'], 'points' => $r['points'], 'settled_at' => now()]);
+                    $call->update(['status' => 'SETTLED', 'correct' => $r['correct'], 'points' => $r['points'], 'markets' => $r['markets'], 'settled_at' => now()]);
                     $this->refreshAccuracy($call->user_id);
                 });
                 $settled++;

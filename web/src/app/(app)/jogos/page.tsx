@@ -7,7 +7,7 @@ import { GameCard } from "@/components/games/GameCard";
 import { WeekStrip } from "@/components/games/WeekStrip";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
 
-export const metadata = { title: "Jogos" };
+export const metadata = { title: "Calendário" };
 
 type Search = { data?: string };
 

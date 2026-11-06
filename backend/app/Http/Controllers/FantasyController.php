@@ -10,13 +10,14 @@ use App\Models\Round;
 use App\Models\Team;
 use App\Services\Fantasy\FantasyMarket;
 use App\Services\Fantasy\FantasyTeamService;
+use App\Services\Fantasy\ShotCallBoost;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /** Fantasy: mercado da rodada e meu time. */
 class FantasyController extends Controller
 {
-    public function __construct(private FantasyMarket $market, private FantasyTeamService $teams) {}
+    public function __construct(private FantasyMarket $market, private FantasyTeamService $teams, private ShotCallBoost $boost) {}
 
     /** GET /fantasy/market — todos os jogadores com preço na rodada (o filtro é no front). */
     public function market(): JsonResponse
@@ -105,13 +106,21 @@ class FantasyController extends Controller
         $mult = (float) config('fantasy.cestinha_multiplier');
         $cost = round($team->players->sum('bought_at_price'), 2);
 
+        // Rodada apurada: o que foi salvo. Senão, a parcial (jogos encerrados + ao vivo) com o
+        // boost dos palpites já apurados na rodada.
+        $settled = $round->market_status === Round::SETTLED;
+        $boost = $this->boost->forUser($team->user_id, $round);
+        $base = $settled ? (float) $team->base_points : $this->teams->teamPoints($team, $points);
+        $boostValue = $settled ? (float) $team->boost : $boost['boost'];
+
         return [
             'cestinha_id' => $team->cestinha_id ? (int) $team->cestinha_id : null,
             'balance' => (float) $team->balance,
             'patrimony' => (float) $team->patrimony,
             'cost' => $cost,
-            // Rodada apurada: o total salvo; senão, a parcial (jogos encerrados + ao vivo).
-            'points' => $round->market_status === Round::SETTLED ? (float) $team->points : $this->teams->teamPoints($team, $points),
+            'base_points' => $base,
+            'points' => $settled ? (float) $team->points : ShotCallBoost::apply($base, $boostValue),
+            'boost' => ['value' => $boostValue] + $boost,
             'players' => $team->players->sortBy(fn ($p) => array_search($p->slot, FantasyTeamService::SLOTS, true))->values()->map(function ($slot) use ($players, $prices, $points, $games, $team, $mult) {
                 $p = $players[$slot->player_id];
                 $isCestinha = (int) $slot->player_id === (int) $team->cestinha_id;

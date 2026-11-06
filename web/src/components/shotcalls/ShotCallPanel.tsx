@@ -121,7 +121,8 @@ export function ShotCallPanel({ game }: { game: GameDetail }) {
                 <span className="text-xs font-bold">fora</span>
               </span>
               <span className="relative">
-                <LockCountdown lockAt={sc.lock_at} />
+                {/* Buzzer beater: o arremesso que sai antes da buzina e cai com o relógio zerado. */}
+                <LockCountdown lockAt={sc.lock_at} label="BUZZER BEATER" />
               </span>
               <span className="relative flex flex-col items-end">
                 <span className="font-display text-xl drop-shadow-[2px_2px_0_var(--color-ink)]">{game.home.tricode}</span>

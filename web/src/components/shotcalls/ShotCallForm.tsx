@@ -105,6 +105,9 @@ export function ShotCallForm({ gameId, home, away, shotCall }: { gameId: string;
 
   return (
     <div className="flex flex-col gap-4">
+      <p className="rounded-xl bg-purple/15 px-3 py-2 text-xs font-bold text-[#C4B5FD]">
+        Cada acerto vira boost no seu time do fantasy nesta rodada: vencedor +1%, margem +2%, MVP +3%.
+      </p>
       <fieldset className="m-0 border-0 p-0">
         <Legend n={1} title="VENCEDOR" points={1} />
         <div className="grid grid-cols-2 gap-2.5">

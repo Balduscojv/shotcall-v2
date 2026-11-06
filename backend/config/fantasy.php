@@ -11,6 +11,13 @@ return [
     // O Cestinha escolhido pelo usuário pontua em dobro.
     'cestinha_multiplier' => 2.0,
 
+    // Boost de palpites: cada acerto de shot call num jogo da rodada multiplica os pontos do
+    // time, pelo peso do mercado (vencedor, margem, MVP do jogo), até o teto da rodada.
+    'shotcall_boost' => [
+        'per_market' => ['winner' => 0.01, 'margin' => 0.02, 'mvp' => 0.03],
+        'cap' => 0.30,
+    ],
+
     // Pontos fantasy por jogo.
     'scoring' => [
         'pts' => 1.0,

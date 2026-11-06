@@ -261,12 +261,27 @@ export type FantasyTeamPlayer = {
   cestinha: boolean;
 };
 
+/** Boost dos palpites na rodada (app/Services/Fantasy/ShotCallBoost.php). */
+export type ShotCallBoost = {
+  /** Multiplicador aplicado: 0,04 = +4%. */
+  value: number;
+  /** Soma dos acertos antes do teto. */
+  raw: number;
+  cap: number;
+  calls: number;
+  hits: Record<ShotCallMarket, number>;
+};
+
 export type FantasyTeam = {
   cestinha_id: number | null;
   balance: number;
   patrimony: number;
   cost: number;
+  /** Pontos dos 5 (cestinha em dobro), antes do boost. */
+  base_points: number;
+  /** Total da rodada: base × (1 + boost). */
   points: number;
+  boost: ShotCallBoost;
   players: FantasyTeamPlayer[];
 };
 

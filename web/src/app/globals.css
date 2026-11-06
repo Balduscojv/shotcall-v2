@@ -32,6 +32,18 @@
   --animate-bounce-ball: bounce-ball 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
   --animate-wobble: wobble 2.6s ease-in-out infinite;
   --animate-marquee: marquee 18s linear infinite;
+  --animate-flame: flame 0.5s ease-in-out infinite;
+  --animate-on-fire: on-fire 1.4s ease-in-out infinite;
+
+  /* Cestinha pegando fogo: chama tremulando e brilho pulsante em volta do jogador. */
+  @keyframes flame {
+    0%, 100% { transform: scaleY(1) rotate(-4deg); }
+    50% { transform: scaleY(1.18) rotate(4deg); }
+  }
+  @keyframes on-fire {
+    0%, 100% { box-shadow: 0 0 0 3px var(--color-yellow), 0 0 18px rgba(255, 200, 61, 0.6); }
+    50% { box-shadow: 0 0 0 3px var(--color-orange), 0 0 30px rgba(255, 90, 31, 0.9); }
+  }
 
   @keyframes pulse-dot {
     0%, 100% { opacity: 1; }

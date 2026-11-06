@@ -8,7 +8,7 @@ import { TeamLive } from "@/components/fantasy/TeamLive";
 import { LockCountdown } from "@/components/shotcalls/LockCountdown";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
 
-export const metadata = { title: "Meu time" };
+export const metadata = { title: "Escale seu time" };
 
 // Fantasy: com o mercado aberto, montar o time; fechado, as parciais da rodada.
 export default function TeamPage() {

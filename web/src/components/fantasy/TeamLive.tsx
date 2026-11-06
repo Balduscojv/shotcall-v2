@@ -2,6 +2,8 @@ import { fmoney, fpoints, roleLabel, roleOf } from "@/lib/fantasy";
 import { teamAccent } from "@/lib/games";
 import type { FantasyRound, FantasyTeam } from "@/lib/types";
 import { LiveBadge } from "@/components/games/LiveBadge";
+import { BoostCard } from "./BoostCard";
+import { Flame } from "./Flame";
 
 /** Mercado fechado: as parciais do time na rodada, jogador por jogador. */
 export function TeamLive({ team, round, multiplier }: { team: FantasyTeam; round: FantasyRound; multiplier: number }) {
@@ -22,7 +24,12 @@ export function TeamLive({ team, round, multiplier }: { team: FantasyTeam; round
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex items-center gap-2 truncate font-bold">
                   {p.name}
-                  {p.cestinha && <span className="rounded-md border-2 border-ink bg-yellow px-1 font-display text-[10px] text-ink">{multiplier}X</span>}
+                  {p.cestinha && (
+                    <span className="flex items-center gap-1 rounded-md border-2 border-ink bg-yellow px-1 font-display text-[10px] text-ink" title={`Cestinha: pontua ${multiplier}x`}>
+                      <Flame size={9} />
+                      {multiplier}X
+                    </span>
+                  )}
                   {p.live && <span className="size-2 animate-pulse-dot rounded-full bg-pink" aria-label="jogando agora" />}
                 </span>
                 <span className="text-xs text-subtle">
@@ -39,8 +46,11 @@ export function TeamLive({ team, round, multiplier }: { team: FantasyTeam; round
         <div className="flex flex-col items-center gap-1 rounded-2xl border-[3px] border-ink bg-hype px-4 py-6 text-ink shadow-hard">
           <span className="font-display text-sm">{settled ? "TOTAL DA RODADA" : "PARCIAL DA RODADA"}</span>
           <span className="font-score text-6xl leading-none tabular-nums">{fpoints(team.points)}</span>
-          <span className="text-sm font-bold">pontos</span>
+          <span className="text-sm font-bold">
+            pontos{team.boost.value > 0 && ` · ${fpoints(team.base_points)} dos jogadores + ${Math.round(team.boost.value * 100)}% de boost`}
+          </span>
         </div>
+        <BoostCard boost={team.boost} basePoints={team.base_points} />
         <div className="grid grid-cols-2 gap-2.5">
           <div className="flex flex-col rounded-2xl border-2 border-surface bg-panel px-3 py-2">
             <span className="text-[11px] font-extrabold tracking-wider text-subtle">PATRIMÔNIO</span>
