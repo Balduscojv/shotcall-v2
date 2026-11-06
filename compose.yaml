@@ -1,5 +1,5 @@
-# Serviços de infraestrutura para desenvolvimento local.
-# O Laravel (php artisan serve) e o Next.js (npm run dev) rodam fora do Docker.
+# Desenvolvimento local: banco, Redis e o Laravel (API, fila e agendador) sobem com
+# `docker compose up -d`. O Next.js (npm run dev, em web/) roda fora do Docker.
 name: shotcall
 
 services:
@@ -36,6 +36,60 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
+
+  # Laravel: API, fila e agendador usam a mesma imagem e o mesmo código montado.
+  api:
+    build: ./backend
+    image: shotcall-backend
+    environment: &backend-env
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_HOST: redis
+      # No Linux do container vale o certificado do sistema, não o bundle do Git para Windows.
+      NBA_CA_BUNDLE: ""
+      PHP_CLI_SERVER_WORKERS: "4"
+      SHOTCALL_PREPARE: "1"
+    volumes: &backend-volumes
+      - ./backend:/app
+      # public/storage no host é uma junction do Windows, que o Linux não segue.
+      - ./backend/storage/app/public:/app/public/storage
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  queue:
+    image: shotcall-backend
+    command: ["php", "artisan", "queue:work", "--tries=1"]
+    environment:
+      <<: *backend-env
+      SHOTCALL_PREPARE: "0"
+    volumes: *backend-volumes
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    image: shotcall-backend
+    command: ["php", "artisan", "schedule:work"]
+    environment:
+      <<: *backend-env
+      SHOTCALL_PREPARE: "0"
+    volumes: *backend-volumes
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:
