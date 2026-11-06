@@ -141,3 +141,11 @@ it('lista ligas visíveis e prêmios conquistados', function () {
         ->assertJsonMissingPath('data.0.trigger')
         ->assertJsonPath('meta.collection_total', Cosmetic::count());
 });
+
+it('conta o catálogo inteiro na aba de prêmios do próprio admin', function () {
+    $admin = User::factory()->admin()->create(['handle' => 'chefe']);
+    $admin->cosmetics()->attach(Cosmetic::value('id'), ['unlocked_at' => now(), 'unlock_reason' => 'Teste']);
+
+    $this->actingAs($admin)->getJson('/api/users/chefe')->assertJsonPath('data.counts.awards', Cosmetic::count());
+    $this->actingAs($this->ana)->getJson('/api/users/chefe')->assertJsonPath('data.counts.awards', 1);
+});

@@ -32,7 +32,8 @@ class ProfileController extends Controller
         $resource->friendship = $this->friends->status($viewer, $user);
         $resource->counts = [
             'shot_calls' => $this->shotCallsQuery($viewer, $user)->count(),
-            'awards' => $user->cosmetics()->count(),
+            // No próprio perfil a aba mostra o que dá para usar: para admin, o catálogo inteiro.
+            'awards' => $viewer->is($user) && $user->isAdmin() ? Cosmetic::count() : $user->cosmetics()->count(),
             'leagues' => $this->leaguesQuery($viewer, $user)->count(),
             'friends' => $this->friends->friendsOf($user)->count(),
         ];
