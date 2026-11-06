@@ -59,7 +59,9 @@ export async function api<T = unknown>(path: string, init: { method?: string; bo
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const message =
-      res.status === 429
+      res.status === 413
+        ? "O arquivo é grande demais para enviar."
+        : res.status === 429
         ? "Muitas tentativas. Espere um minuto e tente de novo."
         : res.status === 419
           ? "Sua sessão expirou. Recarregue a página."

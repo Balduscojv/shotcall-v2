@@ -22,6 +22,10 @@ class CosmeticCatalogController extends Controller
 {
     private const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'];
 
+    /** Banner até 15 MB: GIF animado no tamanho do cabeçalho pesa. O PHP precisa aceitar isso
+     *  (upload_max_filesize e post_max_size acima disso; em dev, 16M e 20M). */
+    private const MAX_IMAGE_KB = 15 * 1024;
+
     private const MESSAGES = [
         'name.required' => 'Dê um nome ao prêmio.',
         'name.max' => 'O nome pode ter até 40 caracteres.',
@@ -31,7 +35,8 @@ class CosmeticCatalogController extends Controller
         'color.required_unless' => 'Escolha uma cor.',
         'image.required_if' => 'Envie a imagem do banner.',
         'image.mimes' => 'Use JPG, PNG, WebP ou GIF.',
-        'image.max' => 'A imagem pode ter até 8 MB.',
+        'image.max' => 'O arquivo pode ter até 15 MB.',
+        'image.uploaded' => 'O arquivo não chegou inteiro ao servidor. Use um arquivo de até 15 MB.',
     ];
 
     public function __construct(private ProfileImage $images) {}
@@ -56,7 +61,7 @@ class CosmeticCatalogController extends Controller
             'slot' => ['required', Rule::enum(CosmeticSlot::class)],
             'rarity' => ['required', Rule::in(self::RARITIES)],
             'color' => ['nullable', 'required_unless:slot,BANNER', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'image' => ['required_if:slot,BANNER', 'nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
+            'image' => ['required_if:slot,BANNER', 'nullable', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.self::MAX_IMAGE_KB],
             'active' => ['boolean'],
         ], self::MESSAGES);
 
@@ -87,7 +92,7 @@ class CosmeticCatalogController extends Controller
             'description' => ['sometimes', 'nullable', 'string', 'max:200'],
             'rarity' => ['sometimes', Rule::in(self::RARITIES)],
             'color' => ['sometimes', 'nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
-            'image' => ['sometimes', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
+            'image' => ['sometimes', 'file', 'mimes:jpg,jpeg,png,webp,gif', 'max:'.self::MAX_IMAGE_KB],
             'active' => ['sometimes', 'boolean'],
         ], self::MESSAGES);
 

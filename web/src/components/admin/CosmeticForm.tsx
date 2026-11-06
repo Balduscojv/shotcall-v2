@@ -9,6 +9,9 @@ import { CosmeticPreview } from "@/components/cosmetics/CosmeticPreview";
 import { Field } from "@/components/ui/Field";
 import { buttonClass } from "@/components/ui/button";
 
+/** Mesmo limite da API (CosmeticCatalogController::MAX_IMAGE_KB). */
+const MAX_IMAGE_MB = 15;
+
 const rarities: Rarity[] = ["COMMON", "RARE", "EPIC", "LEGENDARY"];
 const swatches = ["#c6ff3d", "#22d3ee", "#ff3d7f", "#ff5a1f", "#ffc83d", "#8b5cf6", "#f6f4ee", "#0a0a0a"];
 
@@ -45,6 +48,14 @@ export function CosmeticForm({ cosmetic }: { cosmetic?: AdminCosmetic }) {
   }, []);
 
   function pickFile(next: File | null) {
+    // Barra aqui o que a API recusaria, sem esperar o upload.
+    if (next && next.size > MAX_IMAGE_MB * 1024 * 1024) {
+      const mb = (next.size / 1024 / 1024).toFixed(1).replace(".", ",");
+      setErrors((e) => ({ ...e, image: [`Esse arquivo tem ${mb} MB. O limite é ${MAX_IMAGE_MB} MB.`] }));
+      next = null;
+    } else {
+      setErrors((e) => Object.fromEntries(Object.entries(e).filter(([field]) => field !== "image")));
+    }
     if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
     previewUrl.current = next ? URL.createObjectURL(next) : null;
     setFile(next);
@@ -178,7 +189,7 @@ export function CosmeticForm({ cosmetic }: { cosmetic?: AdminCosmetic }) {
             />
             <p className={`text-sm ${err("image") ? "font-bold text-danger" : "text-subtle"}`}>
               {err("image") ??
-                "Imagem (JPG, PNG, WebP) ou GIF animado, até 8 MB. Proporção 1200 × 280: a imagem é recortada; o GIF fica como veio e é ajustado na tela."}
+                `Imagem (JPG, PNG, WebP) ou GIF animado, até ${MAX_IMAGE_MB} MB. Proporção 1200 × 280: a imagem é recortada; o GIF fica como veio e é ajustado na tela.`}
             </p>
           </div>
         ) : (
