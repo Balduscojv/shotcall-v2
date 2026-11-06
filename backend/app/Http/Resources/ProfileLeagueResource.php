@@ -22,6 +22,7 @@ class ProfileLeagueResource extends JsonResource
             'max_members' => $this->max_members,
             'role' => $this->pivot?->role,
             'rank' => $this->rank,
+            'finished' => $this->finished_at !== null,
         ];
     }
 }

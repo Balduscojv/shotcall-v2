@@ -6,6 +6,7 @@ use App\Services\Missions\Conditions\CestinhaPointsCondition;
 use App\Services\Missions\Conditions\ClutchCondition;
 use App\Services\Missions\Conditions\Condition;
 use App\Services\Missions\Conditions\FriendsLeaguesCondition;
+use App\Services\Missions\Conditions\LeagueRankCondition;
 use App\Services\Missions\Conditions\PerfectShotCallsCondition;
 use App\Services\Missions\Conditions\RoundPointsCondition;
 
@@ -22,6 +23,7 @@ class ConditionCatalog
         RoundPointsCondition::class,
         PerfectShotCallsCondition::class,
         FriendsLeaguesCondition::class,
+        LeagueRankCondition::class,
     ];
 
     /** @return array<string, Condition> por chave */

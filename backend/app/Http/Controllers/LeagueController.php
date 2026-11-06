@@ -47,7 +47,7 @@ class LeagueController extends Controller
             ->get();
 
         return ProfileLeagueResource::collection($leagues)->additional(['meta' => [
-            'count' => $leagues->where('is_global', false)->count(),
+            'count' => $this->leagues->leaguesCount($me),
             'max' => LeagueService::MAX_LEAGUES,
         ]]);
     }
@@ -217,7 +217,11 @@ class LeagueController extends Controller
             : (in_array($request->query('period'), LeagueRanking::PERIODS, true) ? $request->query('period') : 'season');
 
         $meta = ['boards' => $boards, 'board' => $board, 'period' => $period, 'round' => null, 'rounds' => [], 'me' => null, 'total' => 0];
-        $current = Round::current() ?? Round::orderByDesc('starts_at')->first();
+        // Liga encerrada: o ranking fica parado na última rodada apurada quando ela terminou, a
+        // mesma que LeagueSeasonCloser usou para os troféus. Sem parcial.
+        $current = $league->finished_at
+            ? Round::where('market_status', Round::SETTLED)->where('starts_at', '<=', $league->finished_at)->orderByDesc('starts_at')->first()
+            : Round::current() ?? Round::orderByDesc('starts_at')->first();
         if (! $current) {
             return response()->json(['data' => [], 'meta' => $meta]);
         }
@@ -226,7 +230,7 @@ class LeagueController extends Controller
         $chosen = (int) $request->query('round');
         $anchor = $rounds->contains($chosen)
             ? Round::where('season_id', $current->season_id)->where('number', $chosen)->first()
-            : ($board === 'patrimony' ? $current : $this->ranking->defaultRound($board));
+            : ($board === 'patrimony' || $league->finished_at ? $current : $this->ranking->defaultRound($board));
 
         $rows = $this->ranking->board($league, $board, $period, $anchor);
         $mine = $rows->firstWhere('user_id', $me->id);

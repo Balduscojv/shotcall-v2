@@ -5,14 +5,17 @@ use App\Models\Game;
 use App\Models\GameShotCall;
 use App\Models\League;
 use App\Models\LeagueStanding;
+use App\Models\LeagueTrophy;
 use App\Models\Player;
 use App\Models\PlayerGameStat;
 use App\Models\Round;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserAccuracy;
 use App\Services\Leagues\JoinGlobalLeague;
 use App\Services\Leagues\LeagueRanking;
+use App\Services\Leagues\LeagueSeasonCloser;
 use App\Services\Leagues\LeagueService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Carbon;
@@ -337,4 +340,98 @@ it('rodada em andamento: parcial ao vivo do fantasy (com boost) e dos shot calls
     // Patrimônio não tem parcial.
     $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=patrimony")
         ->assertJsonPath('meta.round.provisional', false)->assertJsonPath('meta.round.live', false);
+});
+
+/** Liga de fantasy com N membros pontuando na rodada 2: o primeiro faz N×10, o segundo (N-1)×10... */
+function scoredLeague(User $owner, int $size, array $data = []): array
+{
+    $league = createLeague($owner, $data + ['competitions' => ['FANTASY']]);
+    $users = [$owner, ...User::factory()->count($size - 1)->create()->all()];
+    foreach ($users as $i => $user) {
+        addMember($league, $user, $i === 0 ? 'OWNER' : 'MEMBER');
+        team($user, 2, ($size - $i) * 10);
+    }
+
+    return [$league, $users];
+}
+
+it('fim de temporada: pódio vira troféu, campeão de liga com 5+ ganha o título, todos são avisados', function () {
+    [$league, $users] = scoredLeague($this->ana, 6);
+    [$small, $smallUsers] = scoredLeague($this->bia, 4, ['name' => 'Liga Pequena']);
+
+    $this->artisan('leagues:finish', ['season' => '2026-27'])->expectsOutputToContain('2 liga(s) finalizada(s).')->assertSuccessful();
+
+    expect($league->fresh()->finished_at)->not->toBeNull()
+        ->and(LeagueTrophy::where('league_id', $league->id)->orderBy('rank')->pluck('rank', 'user_id')->all())
+        ->toBe([$users[0]->id => 1, $users[1]->id => 2, $users[2]->id => 3]);
+
+    // Campeã com 6 membros: título com o nome da liga no motivo. Pódio pede 10: ninguém leva a moldura.
+    $title = $this->ana->cosmetics()->where('key', 'league-champion')->first();
+    expect($title?->pivot->unlock_reason)->toBe('Campeão da Liga do Rachão · Fantasy 2026-27')
+        ->and($users[1]->cosmetics()->where('key', 'league-podium')->exists())->toBeFalse()
+        // Liga de 4: tem troféu, mas não dá o título.
+        ->and(LeagueTrophy::where('league_id', $small->id)->where('rank', 1)->value('user_id'))->toBe($this->bia->id)
+        ->and($this->bia->cosmetics()->where('key', 'league-champion')->exists())->toBeFalse();
+
+    $notice = $users[1]->notifications()->where('type', 'league_finished')->first();
+    expect($notice->data['body'])->toBe('Temporada 2026-27 encerrada. Você terminou em 2º de 6 no fantasy.')
+        ->and($this->ana->notifications()->where('type', 'league_finished')->first()->data['title'])->toBe('Campeão da Liga do Rachão!');
+
+    // Rodar de novo não muda nada.
+    $this->artisan('leagues:finish', ['season' => '2026-27'])->expectsOutputToContain('0 liga(s) finalizada(s).');
+});
+
+it('pódio da temporada: top 3 de liga com 10+ ganha a moldura', function () {
+    [$league, $users] = scoredLeague($this->ana, 10);
+    app(LeagueSeasonCloser::class)->closeSeason(Season::first());
+
+    expect(collect($users)->filter(fn (User $u) => $u->cosmetics()->where('key', 'league-podium')->exists())->keys()->all())
+        ->toBe([0, 1, 2])
+        ->and($users[2]->cosmetics()->where('key', 'league-podium')->first()->pivot->unlock_reason)
+        ->toBe('3º na Liga do Rachão · Fantasy 2026-27');
+});
+
+it('liga encerrada fica congelada e vira histórico no perfil', function () {
+    [$league, $users] = scoredLeague($this->ana, 5);
+    addMember($league, $this->bia);
+    app(LeagueSeasonCloser::class)->closeSeason(Season::first());
+
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}")
+        ->assertJsonPath('data.can.update', false)->assertJsonPath('data.can.delete', true)
+        ->assertJsonMissingPath('data.invite_code');
+    $this->actingAs($this->bia)->postJson("/api/leagues/{$league->slug}/leave")->assertJsonValidationErrors('league');
+    $this->actingAs($this->caio)->postJson('/api/leagues/join', ['code' => $league->invite_code])->assertJsonValidationErrors('code');
+    $this->actingAs($this->ana)->patchJson("/api/leagues/{$league->slug}", [
+        'name' => 'Outra', 'color' => '#22D3EE', 'privacy' => 'PUBLIC', 'competitions' => ['FANTASY'],
+    ])->assertForbidden();
+
+    // Ranking parado na última rodada apurada (aqui, a 2, com a 3 rolando; no fim da temporada de
+    // verdade, a última), sem parcial.
+    $standings = $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings")->assertOk();
+    expect($standings->json('meta.round.number'))->toBe(2)
+        ->and($standings->json('meta.round.provisional'))->toBeFalse()
+        ->and($standings->json('data.0.user.handle'))->toBe('ana');
+
+    // Não ocupa vaga entre as 10.
+    $this->actingAs($this->ana)->getJson('/api/leagues')->assertJsonPath('meta.count', 0);
+
+    // Vitrine: o troféu aparece para todos; o link da liga privada, só para quem é membro.
+    $this->actingAs($this->bia)->getJson('/api/users/ana')
+        ->assertJsonPath('data.trophies.0.rank', 1)
+        ->assertJsonPath('data.trophies.0.league_name', 'Liga do Rachão')
+        ->assertJsonPath('data.trophies.0.league_slug', $league->slug);
+    $this->actingAs($this->caio)->getJson('/api/users/ana')
+        ->assertJsonPath('data.trophies.0.league_slug', null);
+});
+
+it('sem pontos antes, não mostra subida nem queda', function () {
+    $league = createLeague($this->ana);
+    addMember($league, $this->ana, 'OWNER');
+    addMember($league, $this->bia);
+    team($this->ana, 2, 10);
+    team($this->bia, 2, 40);
+
+    // Na rodada 1 ninguém pontuou: todos estavam empatados em 1º.
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=season&round=2")
+        ->assertJsonPath('data.0.move', null)->assertJsonPath('data.1.move', null);
 });

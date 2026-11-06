@@ -17,14 +17,15 @@ class LeaguePolicy
         return $league->privacy === 'PUBLIC' || $league->hasMember($user);
     }
 
+    /** Liga encerrada fica congelada: só dá para excluir. */
     public function update(User $user, League $league): bool
     {
-        return ! $league->is_global && $league->owner_id === $user->id;
+        return $this->delete($user, $league) && $league->finished_at === null;
     }
 
     public function delete(User $user, League $league): bool
     {
-        return $this->update($user, $league);
+        return ! $league->is_global && $league->owner_id === $user->id;
     }
 
     /** Trocar papel e transferir a liga. */
@@ -36,7 +37,8 @@ class LeaguePolicy
     /** Remover membros e gerar código novo. */
     public function moderate(User $user, League $league): bool
     {
-        return ! $league->is_global && in_array($this->roleOf($user, $league), ['OWNER', 'ADMIN'], true);
+        return ! $league->is_global && $league->finished_at === null
+            && in_array($this->roleOf($user, $league), ['OWNER', 'ADMIN'], true);
     }
 
     /** O dono remove qualquer um; admin, só membros comuns. Ninguém remove o dono nem a si mesmo. */

@@ -18,7 +18,7 @@ class LeagueService
 {
     public const MAX_MEMBERS = 20;
 
-    /** Ligas por usuário, sem contar a global. */
+    /** Ligas em andamento por usuário, sem contar a global nem as já encerradas. */
     public const MAX_LEAGUES = 10;
 
     /** Sem 0/O e 1/I, que se confundem quando alguém dita o código. */
@@ -51,6 +51,9 @@ class LeagueService
         if ($league->hasMember($user)) {
             return;
         }
+        if ($league->finished_at !== null) {
+            throw ValidationException::withMessages(['code' => 'Essa liga já terminou a temporada.']);
+        }
         if ($league->isFull()) {
             throw ValidationException::withMessages(['code' => 'Essa liga está cheia.']);
         }
@@ -64,6 +67,10 @@ class LeagueService
     {
         if ($league->is_global) {
             throw ValidationException::withMessages(['league' => 'Não dá para sair da Liga Global.']);
+        }
+        if ($league->finished_at !== null) {
+            // A liga terminada é o histórico de quem jogou (troféus, Splash Brothers).
+            throw ValidationException::withMessages(['league' => 'Essa liga já terminou: ela fica no seu histórico.']);
         }
         if ($league->owner_id === $user->id) {
             throw ValidationException::withMessages(['league' => 'Passe a liga para outro membro antes de sair, ou exclua a liga.']);
@@ -113,7 +120,8 @@ class LeagueService
 
     public function leaguesCount(User $user): int
     {
-        return $user->leagues()->where('is_global', false)->count();
+        // Liga encerrada vira histórico: não ocupa vaga.
+        return $user->leagues()->where('is_global', false)->whereNull('finished_at')->count();
     }
 
     private function assertRoomForAnotherLeague(User $user): void

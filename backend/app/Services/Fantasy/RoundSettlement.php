@@ -9,6 +9,7 @@ use App\Models\PlayerRoundScore;
 use App\Models\Round;
 use App\Notifications\RoundSettled;
 use App\Services\Leagues\LeagueRanking;
+use App\Services\Leagues\LeagueSeasonCloser;
 use App\Services\Missions\MissionRunner;
 use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,8 @@ use Illuminate\Support\Facades\DB;
  * 2. preços da próxima rodada (valorização pela média na rodada);
  * 3. o time segue para a próxima rodada com os mesmos jogadores, e o patrimônio passa a ser
  *    saldo + valor do time nos preços novos;
- * 4. a rodada fecha e o mercado da próxima abre.
+ * 4. a rodada fecha e o mercado da próxima abre;
+ * 5. na última rodada da temporada, as ligas terminam (LeagueSeasonCloser).
  */
 class RoundSettlement
 {
@@ -32,6 +34,7 @@ class RoundSettlement
         private ShotCallService $shotCalls,
         private MissionRunner $missions,
         private LeagueRanking $standings,
+        private LeagueSeasonCloser $seasons,
     ) {}
 
     /** Rodadas travadas que já acabaram e não têm jogo pendente. */
@@ -116,6 +119,11 @@ class RoundSettlement
         $this->standings->snapshot($round);
         $this->notifyTeams($round);
         $this->missions->roundSettled($round);
+
+        // Última rodada da temporada: as ligas fecham, com troféus e prêmios.
+        if (! $next) {
+            $this->seasons->closeSeason($round->season);
+        }
     }
 
     /** Cada dono de time recebe quantos pontos fez. Fora da transação: só avisa o que já gravou. */

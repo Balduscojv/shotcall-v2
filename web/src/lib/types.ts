@@ -183,6 +183,21 @@ export type Profile = User & {
   friendship: Friendship;
   counts: { shot_calls: number; awards: number; leagues: number; friends: number };
   accuracy: Partial<Record<AccuracyMode, { rate: number | null; counted: number; tier: Tier | null }>>;
+  /** Vitrine: pódios de liga no fim de temporada, campeões primeiro. */
+  trophies: LeagueTrophy[];
+};
+
+/** Troféu de liga (ProfileController::trophies). Nome e cor da liga como eram no fim da temporada. */
+export type LeagueTrophy = {
+  rank: number;
+  competition: Competition;
+  season: string;
+  league_name: string;
+  league_color: string;
+  /** Nulo se a liga foi excluída ou se quem vê não pode abri-la. */
+  league_slug: string | null;
+  members_count: number;
+  score: number;
 };
 
 type TeamScore = { tricode: string; color: string; score: number };
@@ -219,6 +234,8 @@ export type ProfileLeague = {
   max_members: number;
   role: LeagueRole | null;
   rank: number | null;
+  /** Temporada encerrada: ranking congelado, vira histórico. */
+  finished: boolean;
 };
 
 /** Liga vista por mim (app/Http/Resources/LeagueResource.php). */
@@ -235,7 +252,8 @@ export type League = {
   role: LeagueRole | null;
   /** Só para membros. */
   invite_code?: string;
-  can: { update: boolean; moderate: boolean; change_roles: boolean; join: boolean; leave: boolean };
+  finished_at: string | null;
+  can: { update: boolean; moderate: boolean; change_roles: boolean; delete: boolean; join: boolean; leave: boolean };
 };
 
 /** Liga pública na busca (GET /leagues/search). */

@@ -255,6 +255,22 @@
     inset 0 0 0 1.5px var(--color-ink);
 }
 
+/* Pódio da Temporada (prêmio de liga): três terços, ouro, prata e bronze. */
+@utility frame-podium {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    conic-gradient(
+      from -60deg,
+      #ffc83d 0 118deg, var(--color-ink) 118deg 122deg,
+      #c9d1dc 122deg 238deg, var(--color-ink) 238deg 242deg,
+      #d9822b 242deg 358deg, var(--color-ink) 358deg 360deg
+    ) border-box;
+  box-shadow:
+    0 0 0 1.5px var(--color-ink),
+    inset 0 0 0 1.5px var(--color-ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

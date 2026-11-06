@@ -77,6 +77,21 @@ async function LeagueView({ params, searchParams }: { params: Promise<{ slug: st
         </div>
       </header>
 
+      {league.finished_at && (
+        <section
+          aria-labelledby="h-encerrada"
+          className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border-[3px] border-ink bg-[linear-gradient(140deg,var(--color-yellow),var(--color-orange))] p-5 text-ink shadow-hard"
+        >
+          <div className="flex flex-col gap-1">
+            <h2 id="h-encerrada" className="font-display text-xl">TEMPORADA ENCERRADA</h2>
+            <p className="max-w-2xl font-semibold">
+              O ranking final está congelado. O pódio de cada ranking virou troféu no perfil; campeão em liga de 5+ membros leva o
+              título Campeão da Liga, e o top 3 em liga de 10+, a moldura Pódio da Temporada.
+            </p>
+          </div>
+        </section>
+      )}
+
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Standings slug={league.slug} standings={standings} />
 
@@ -129,6 +144,17 @@ async function LeagueView({ params, searchParams }: { params: Promise<{ slug: st
               label="Sair da liga"
               variant="ghost"
               confirmText={`Sair da ${league.name}? Para voltar, vai precisar do código.`}
+            />
+          )}
+
+          {/* Encerrada, a edição some; excluir continua com o dono. Em andamento, fica em Editar. */}
+          {league.finished_at && league.can.delete && (
+            <LeagueActionButton
+              slug={league.slug}
+              action="delete"
+              label="Excluir liga"
+              variant="ghost"
+              confirmText={`Excluir a ${league.name}? Os troféus continuam no perfil de cada um.`}
             />
           )}
         </aside>

@@ -72,6 +72,15 @@ class CosmeticSeeder extends Seeder
                 'key' => 'mission-splash-brothers', 'slot' => CosmeticSlot::Title, 'name' => 'Splash Brothers', 'rarity' => 'RARE',
                 'description' => 'Amigos que finalizaram 3 ligas juntos. Dupla que não se separa.',
             ],
+            // Prêmios de liga (plano: "Prêmios de liga"). O nome da liga vai no motivo do card.
+            [
+                'key' => 'league-champion', 'slot' => CosmeticSlot::Title, 'name' => 'Campeão da Liga', 'rarity' => 'EPIC',
+                'description' => 'Terminou a temporada em 1º numa liga de pelo menos 5 membros.',
+            ],
+            [
+                'key' => 'league-podium', 'slot' => CosmeticSlot::Frame, 'name' => 'Pódio da Temporada', 'rarity' => 'EPIC',
+                'description' => 'Ouro, prata e bronze: terminou no top 3 de uma liga com pelo menos 10 membros.',
+            ],
         ];
 
         // firstOrCreate: depois de criado, o prêmio é da moderação (nome, cor, ativo...);

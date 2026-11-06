@@ -29,6 +29,21 @@ class MissionSeeder extends Seeder
                 'hint' => 'Forme amizades consistentes.',
                 'rewards' => ['mission-splash-brothers'],
             ],
+            // Prêmios de liga: abertos (não secretos), saem no fim da temporada da liga.
+            [
+                'key' => 'league-champion', 'name' => 'Campeão da Liga', 'condition' => 'league_rank',
+                'params' => ['max_rank' => 1, 'min_members' => 5], 'secret' => false,
+                'description' => 'Terminar a temporada em 1º numa liga com 5 ou mais membros.',
+                'hint' => 'Ganhe a sua liga.',
+                'rewards' => ['league-champion'],
+            ],
+            [
+                'key' => 'league-podium', 'name' => 'Pódio da Temporada', 'condition' => 'league_rank',
+                'params' => ['max_rank' => 3, 'min_members' => 10], 'secret' => false,
+                'description' => 'Terminar a temporada no top 3 de uma liga com 10 ou mais membros.',
+                'hint' => 'Chegue ao pódio de uma liga cheia.',
+                'rewards' => ['league-podium'],
+            ],
         ];
 
         foreach ($missions as $data) {

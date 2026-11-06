@@ -33,6 +33,9 @@ export function LeagueCard({ league, linked = true }: { league: ProfileLeague; l
               {competitionLabel[c]}
             </span>
           ))}
+          {league.finished && (
+            <span className="rounded-full bg-yellow px-2.5 py-1 font-bold text-ink">Encerrada</span>
+          )}
           {league.privacy === "PRIVATE" && (
             <span className="rounded-full border-2 border-surface px-2.5 py-0.5 font-bold text-muted">Privada</span>
           )}

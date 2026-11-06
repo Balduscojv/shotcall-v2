@@ -24,8 +24,10 @@ export function Standings({ slug, standings }: { slug: string; standings: Standi
   const podium = rows.length >= 3 && rows[0].score !== null ? rows.slice(0, 3) : [];
   const rest = rows.slice(podium.length);
   const meVisible = rows.some((r) => r.is_me);
-  // A barra fixa com a minha posição só ajuda quando a lista é longa ou eu não estou nela.
-  const showMeBar = meta.me !== null && (!meVisible || rows.length > STICKY_FROM);
+  // A barra fixa com a minha posição só ajuda quando a lista é longa ou eu não estou nela; no
+  // pódio eu já apareço em destaque.
+  const onPodium = podium.some((r) => r.is_me);
+  const showMeBar = meta.me !== null && !onPodium && (!meVisible || rows.length > STICKY_FROM);
 
   const scope =
     !round ? null

@@ -159,7 +159,13 @@ class LeagueRanking
             return [];
         }
 
-        return $this->rank($league, $board, $period, $previous)->pluck('rank', 'user_id')->all();
+        $before = $this->rank($league, $board, $period, $previous);
+        // Ninguém tinha pontuado (todos empatados em 1º): não há subida nem queda para mostrar.
+        if ($before->pluck('score')->unique()->count() <= 1) {
+            return [];
+        }
+
+        return $before->pluck('rank', 'user_id')->all();
     }
 
     /** @return Collection<int, float> pontos de fantasy por user_id */

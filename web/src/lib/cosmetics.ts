@@ -23,6 +23,8 @@ const frames: Record<string, string> = {
   "welcome-frame-paint": "frame-paint",
   // Capuz do Ceifador: o aro é escuro com filete dourado; capuz e foice vêm de FrameArt.tsx.
   "frame-reaper": "frame-reaper",
+  // Pódio da Temporada: ouro, prata e bronze em volta da foto.
+  "league-podium": "frame-podium",
 };
 
 /** Etiqueta do título ao lado do @. */
@@ -32,6 +34,8 @@ const titles: Record<string, string> = {
   "welcome-title-sixth": "bg-pink text-ink",
   // Dupla: as duas cores do arremesso de três.
   "mission-splash-brothers": "bg-linear-to-r from-cyan to-yellow text-ink",
+  // Campeão da Liga: ouro da taça.
+  "league-champion": "bg-linear-to-r from-yellow via-gold-light to-yellow text-ink",
 };
 
 // Visual padrão de quem não tem arte nem cor própria: a cor da raridade.

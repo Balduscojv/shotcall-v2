@@ -11,6 +11,7 @@ use App\Models\Cosmetic;
 use App\Models\Game;
 use App\Models\GameShotCall;
 use App\Models\LeagueStanding;
+use App\Models\LeagueTrophy;
 use App\Models\User;
 use App\Models\UserAccuracy;
 use App\Services\Friends\FriendshipService;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 
 /** Perfil público de um usuário (por @) e as abas: palpites, prêmios, ligas e amigos. */
 class ProfileController extends Controller
@@ -44,7 +46,32 @@ class ProfileController extends Controller
                 'tier' => $a->tier,
             ]])->all();
 
+        $resource->trophies = $this->trophies($viewer, $user);
+
         return $resource;
+    }
+
+    /**
+     * Vitrine de troféus: pódios de liga, campeões primeiro, mais recentes antes. O nome da liga
+     * aparece para todos; o link, só se quem vê pode abrir a liga.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function trophies(User $viewer, User $user): array
+    {
+        return LeagueTrophy::with(['season', 'league'])->where('user_id', $user->id)
+            ->orderBy('rank')->orderByDesc('season_id')->orderByDesc('id')
+            ->get()
+            ->map(fn (LeagueTrophy $t) => [
+                'rank' => $t->rank,
+                'competition' => $t->competition,
+                'season' => $t->season->label,
+                'league_name' => $t->league_name,
+                'league_color' => $t->league_color,
+                'league_slug' => $t->league && Gate::forUser($viewer)->allows('view', $t->league) ? $t->league->slug : null,
+                'members_count' => $t->members_count,
+                'score' => $t->score,
+            ])->all();
     }
 
     public function shotCalls(Request $request, User $user): AnonymousResourceCollection

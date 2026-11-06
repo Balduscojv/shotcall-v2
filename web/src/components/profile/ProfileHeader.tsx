@@ -1,5 +1,6 @@
 import { bannerLook } from "@/lib/cosmetics";
 import { getProfile } from "@/lib/profile";
+import { TrophyShelf } from "@/components/leagues/TrophyShelf";
 import { TitleBadge } from "@/components/cosmetics/CosmeticPreview";
 import { formatMonthYear, formatRate, tierColor, tierLabel } from "@/lib/labels";
 import { Avatar } from "./Avatar";
@@ -65,6 +66,8 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
           <FriendButton handle={profile.handle!} status={profile.friendship} />
         )}
       </div>
+
+      {profile.trophies.length > 0 && <TrophyShelf trophies={profile.trophies} />}
 
       <ProfileTabs handle={profile.handle!} counts={profile.counts} />
     </section>
