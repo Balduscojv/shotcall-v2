@@ -267,7 +267,15 @@ export type Standings = {
     boards: StandingsBoard[];
     board: StandingsBoard;
     period: StandingsPeriod;
-    round: { number: number; status: FantasyRound["status"]; month: string } | null;
+    round: {
+      number: number;
+      status: FantasyRound["status"];
+      month: string;
+      /** O período inclui a rodada em andamento: os pontos dela são parciais. */
+      provisional: boolean;
+      /** Tem jogo da rodada rolando agora. */
+      live: boolean;
+    } | null;
     rounds: number[];
     me: StandingRow | null;
     total: number;

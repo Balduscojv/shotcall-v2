@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { boardLabel, formatScore, periodLabel } from "@/lib/leagues";
 import type { StandingRow, Standings as StandingsData, StandingsBoard, StandingsPeriod } from "@/lib/types";
+import { LiveBadge } from "@/components/games/LiveBadge";
 import { Avatar } from "@/components/profile/Avatar";
 
 /** A partir de quantas linhas a minha posição ganha a barra fixa embaixo. */
@@ -29,7 +30,7 @@ export function Standings({ slug, standings }: { slug: string; standings: Standi
   const scope =
     !round ? null
     : board === "patrimony" ? `Patrimônio na rodada ${round.number}`
-    : period === "round" ? `Rodada ${round.number}${round.status === "SETTLED" ? "" : " · em andamento"}`
+    : period === "round" ? `Rodada ${round.number}`
     : period === "month" ? `Mês de ${round.month}, até a rodada ${round.number}`
     : `Temporada, até a rodada ${round.number}`;
 
@@ -77,7 +78,23 @@ export function Standings({ slug, standings }: { slug: string; standings: Standi
           <RoundStepper slug={slug} board={board} period={period} number={round.number} rounds={meta.rounds} />
         )}
       </div>
-      {scope && <p className="-mt-1 text-sm text-subtle">{scope}</p>}
+      {scope && (
+        <div className="-mt-1 flex flex-wrap items-center gap-2">
+          <p className="text-sm text-subtle">{scope}</p>
+          {round?.live ? (
+            <LiveBadge size="sm" />
+          ) : round?.provisional ? (
+            <span className="rounded-lg bg-surface px-2 py-0.5 text-xs font-extrabold text-muted">PARCIAL</span>
+          ) : null}
+        </div>
+      )}
+      {round?.provisional && (
+        <p className="-mt-2 text-xs text-subtle">
+          {board === "shotcall"
+            ? "A rodada ainda não foi apurada: conta os palpites já apurados e, nos jogos rolando, quanto valeriam se acabassem agora."
+            : "A rodada ainda não foi apurada: conta os jogos encerrados e os que estão rolando, com o boost dos palpites já apurados."}
+        </p>
+      )}
 
       {rows.length === 0 ? (
         <p className="rounded-2xl border-2 border-dashed border-surface p-6 text-muted">Ninguém pontuou ainda.</p>

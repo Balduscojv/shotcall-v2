@@ -12,6 +12,7 @@ use App\Models\Round;
 use App\Models\User;
 use App\Services\Leagues\LeagueRanking;
 use App\Services\Leagues\LeagueService;
+use App\Services\Leagues\LivePartials;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,7 +27,11 @@ class LeagueController extends Controller
     /** Linhas do ranking na resposta. A global tem milhares; a minha posição vem à parte. */
     private const RANKING_ROWS = 100;
 
-    public function __construct(private LeagueService $leagues, private LeagueRanking $ranking) {}
+    public function __construct(
+        private LeagueService $leagues,
+        private LeagueRanking $ranking,
+        private LivePartials $live,
+    ) {}
 
     /** Minhas ligas (a global primeiro), com a posição da última foto do ranking. */
     public function index(Request $request): AnonymousResourceCollection
@@ -238,7 +243,12 @@ class LeagueController extends Controller
             'data' => $shown->map($present)->values(),
             'meta' => [
                 ...$meta,
-                'round' => ['number' => $anchor->number, 'status' => $anchor->market_status, 'month' => $this->ranking->monthLabel($anchor)],
+                'round' => [
+                    'number' => $anchor->number, 'status' => $anchor->market_status, 'month' => $this->ranking->monthLabel($anchor),
+                    // Pontos da rodada em andamento são parciais; com jogo rolando, a tela se atualiza sozinha.
+                    'provisional' => $board !== 'patrimony' && LivePartials::inProgress($anchor),
+                    'live' => $board !== 'patrimony' && LivePartials::inProgress($anchor) && $this->live->hasLiveGames($anchor),
+                ],
                 'rounds' => $rounds,
                 'me' => $mine ? $present($mine) : null,
                 'total' => $rows->count(),

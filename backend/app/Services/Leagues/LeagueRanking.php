@@ -16,23 +16,32 @@ use Illuminate\Support\Facades\DB;
  * - patrimony: patrimônio do time na rodada; não tem período.
  * - shotcall: pontos dos palpites de jogo do período; desempata pela taxa de acerto de jogo.
  *
- * Cada membro só soma a partir da rodada em que entrou (joined_round_number). O cálculo é em
+ * Cada membro só soma a partir da rodada em que entrou (joined_round_number). Rodada apurada usa o
+ * que a apuração salvou; rodada em andamento usa a parcial ao vivo (LivePartials). O cálculo é em
  * PHP sobre linhas já agregadas no banco, para valer igual no Postgres e no SQLite dos testes.
  */
 class LeagueRanking
 {
+    public function __construct(private LivePartials $live) {}
+
     public const BOARDS = ['fantasy', 'patrimony', 'shotcall'];
 
     public const PERIODS = ['round', 'month', 'season'];
 
     private const MONTHS = [1 => 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 
-    /** Rodada que o ranking mostra quando ninguém escolheu: a última com pontos de fantasy, ou a atual. */
+    /**
+     * Rodada que o ranking mostra quando ninguém escolheu: a atual, se já começou (com a parcial).
+     * Antes do primeiro jogo dela, o fantasy ainda não tem ponto: mostra a última apurada.
+     */
     public function defaultRound(string $board): ?Round
     {
         $current = Round::current();
-        if ($board !== 'fantasy' || ! $current) {
-            return $current ?? Round::orderByDesc('starts_at')->first();
+        if (! $current) {
+            return Round::orderByDesc('starts_at')->first();
+        }
+        if ($board !== 'fantasy' || LivePartials::inProgress($current)) {
+            return $current;
         }
 
         return Round::where('season_id', $current->season_id)->where('market_status', Round::SETTLED)
@@ -156,22 +165,24 @@ class LeagueRanking
     /** @return Collection<int, float> pontos de fantasy por user_id */
     private function fantasyPoints(League $league, Collection $rounds): Collection
     {
-        return DB::table('league_members as m')
+        $saved = DB::table('league_members as m')
             ->join('fantasy_teams as t', 't.user_id', '=', 'm.user_id')
             ->join('rounds as r', 'r.id', '=', 't.round_id')
             ->where('m.league_id', $league->id)
-            ->whereIn('t.round_id', $rounds->pluck('id'))
+            ->whereIn('t.round_id', $rounds->reject(fn (Round $r) => LivePartials::inProgress($r))->pluck('id'))
             ->where(fn ($q) => $q->whereNull('m.joined_round_number')->orWhereColumn('r.number', '>=', 'm.joined_round_number'))
             ->groupBy('m.user_id')
             ->selectRaw('m.user_id, sum(coalesce(t.points, 0)) as score')
             ->pluck('score', 'user_id')
             ->map(fn ($v) => (float) $v);
+
+        return $this->addPartials($league, $rounds, $saved, fn (Round $r) => $this->live->fantasy($r));
     }
 
     /** @return Collection<int, int> pontos de palpites de jogo por user_id */
     private function shotCallPoints(League $league, Collection $rounds): Collection
     {
-        return DB::table('league_members as m')
+        $saved = DB::table('league_members as m')
             ->join('game_shot_calls as c', 'c.user_id', '=', 'm.user_id')
             ->join('games as g', 'g.id', '=', 'c.game_id')
             ->join('rounds as r', 'r.id', '=', 'g.round_id')
@@ -182,6 +193,33 @@ class LeagueRanking
             ->selectRaw('m.user_id, sum(coalesce(c.points, 0)) as score')
             ->pluck('score', 'user_id')
             ->map(fn ($v) => (int) $v);
+
+        // Os palpites já apurados estão no banco; os de jogos ao vivo entram pela parcial.
+        return $this->addPartials($league, $rounds, $saved, fn (Round $r) => $this->live->shotCalls($r));
+    }
+
+    /**
+     * Soma a parcial das rodadas em andamento do período, para os membros que já pontuam nelas.
+     *
+     * @param  callable(Round): Collection<int, float|int>  $partials
+     */
+    private function addPartials(League $league, Collection $rounds, Collection $scores, callable $partials): Collection
+    {
+        $running = $rounds->filter(fn (Round $r) => LivePartials::inProgress($r));
+        if ($running->isEmpty()) {
+            return $scores;
+        }
+        $joined = DB::table('league_members')->where('league_id', $league->id)->pluck('joined_round_number', 'user_id');
+
+        foreach ($running as $round) {
+            foreach ($partials($round) as $userId => $points) {
+                if ($joined->has($userId) && ($joined[$userId] === null || $round->number >= $joined[$userId])) {
+                    $scores[$userId] = ($scores[$userId] ?? 0) + $points;
+                }
+            }
+        }
+
+        return $scores;
     }
 
     /** @return Collection<int, float> patrimônio do time na rodada, por user_id */

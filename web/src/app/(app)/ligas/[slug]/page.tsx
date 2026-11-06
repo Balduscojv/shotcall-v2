@@ -7,6 +7,7 @@ import type { League, LeagueMember, Standings as StandingsData } from "@/lib/typ
 import { InvitePanel, LeagueActionButton, MemberControls } from "@/components/leagues/LeagueForms";
 import { LeagueCrest } from "@/components/leagues/LeagueCrest";
 import { Standings } from "@/components/leagues/Standings";
+import { AutoRefresh } from "@/components/games/AutoRefresh";
 import { Avatar } from "@/components/profile/Avatar";
 import { TabSkeleton } from "@/components/profile/TabStates";
 import { buttonClass } from "@/components/ui/button";
@@ -45,6 +46,8 @@ async function LeagueView({ params, searchParams }: { params: Promise<{ slug: st
 
   return (
     <div className="flex flex-col gap-8">
+      {/* A parcial no servidor dura 30 s: atualizar mais rápido que isso não muda nada. */}
+      <AutoRefresh enabled={standings.meta.round?.live ?? false} seconds={30} />
       <header className="flex flex-wrap items-center gap-4">
         <LeagueCrest name={league.name} color={league.color} size="lg" />
         <div className="flex min-w-0 flex-1 basis-60 flex-col gap-1">

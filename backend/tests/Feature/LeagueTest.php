@@ -5,6 +5,8 @@ use App\Models\Game;
 use App\Models\GameShotCall;
 use App\Models\League;
 use App\Models\LeagueStanding;
+use App\Models\Player;
+use App\Models\PlayerGameStat;
 use App\Models\Round;
 use App\Models\Team;
 use App\Models\User;
@@ -14,6 +16,7 @@ use App\Services\Leagues\LeagueRanking;
 use App\Services\Leagues\LeagueService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 // Sexta, 6/nov: a rodada 3 (2 a 8/nov) está rolando; a 1 e a 2 (outubro) já foram apuradas.
 beforeEach(function () {
@@ -191,9 +194,13 @@ it('ranking de fantasy: soma do período, a partir da entrada, desempate pelo pa
     $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=round&round=2")
         ->assertJsonPath('data.0.user.handle', 'caio')->assertJsonPath('data.0.score', 80);
 
-    // Sem escolher, o fantasy mostra a última rodada apurada (a 2).
+    // Sem escolher, mostra a rodada que está rolando (a 3), com a parcial.
     $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?period=round")
-        ->assertJsonPath('meta.round.number', 2)->assertJsonPath('meta.round.month', 'outubro');
+        ->assertJsonPath('meta.round.number', 3)->assertJsonPath('meta.round.month', 'novembro')
+        ->assertJsonPath('meta.round.provisional', true);
+    // Mês de outubro, até a rodada 2.
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?period=month&round=2")
+        ->assertJsonPath('meta.round.month', 'outubro')->assertJsonPath('meta.round.provisional', false);
 });
 
 it('ranking de patrimônio e de shot calls, com desempate pela taxa de acerto', function () {
@@ -260,4 +267,74 @@ it('membros vêm com o papel, dono primeiro', function () {
     $this->actingAs($this->caio)->getJson("/api/leagues/{$league->slug}/members")
         ->assertJsonPath('data.0.handle', 'ana')->assertJsonPath('data.0.league_role', 'OWNER')
         ->assertJsonPath('data.1.handle', 'bia')->assertJsonPath('data.2.league_role', 'MEMBER');
+});
+
+it('rodada em andamento: parcial ao vivo do fantasy (com boost) e dos shot calls', function () {
+    // Cache que serializa, como o de verdade: a parcial fica guardada entre as requisições.
+    config(['cache.default' => 'file']);
+    Cache::flush();
+
+    $league = createLeague($this->ana);
+    addMember($league, $this->ana, 'OWNER');
+    addMember($league, $this->bia);
+    addMember($league, $this->caio, 'MEMBER', from: 4); // entrou com a rodada 3 rolando: não conta
+
+    $r3 = ($this->round)(3); // LOCKED: começou e não foi apurada
+    $bos = Team::where('tricode', 'BOS')->first();
+    $lal = Team::where('tricode', 'LAL')->first();
+    Player::create(['id' => 1, 'full_name' => 'Jogador 1', 'active' => true, 'team_id' => $bos->id, 'position' => 'G', 'role' => 'PG']);
+    Player::create(['id' => 2, 'full_name' => 'Jogador 2', 'active' => true, 'team_id' => $lal->id, 'position' => 'G', 'role' => 'SG']);
+    $game = fn (string $id, string $status, array $extra = []) => Game::create([
+        'id' => $id, 'season_id' => $r3->season_id, 'round_id' => $r3->id, 'phase' => 'REGULAR',
+        'home_team_id' => $bos->id, 'away_team_id' => $lal->id, 'start_time' => now()->subHours(2), 'status' => $status,
+    ] + $extra);
+
+    // Jogo encerrado e apurado: Ana acertou o vencedor (1 ponto, boost de 1% no fantasy).
+    $done = $game('401000801', 'FINAL');
+    GameShotCall::create([
+        'user_id' => $this->ana->id, 'game_id' => $done->id, 'winner_team_id' => $bos->id, 'margin_band' => 'M16_PLUS',
+        'mvp_player_id' => 2, 'status' => 'SETTLED', 'correct' => 1, 'points' => 1,
+        'markets' => ['winner' => true, 'margin' => false, 'mvp' => false],
+    ]);
+
+    // Ao vivo: BOS 50 × 47 LAL; Jogador 1 com 10 pontos lidera, Jogador 2 com 4.
+    $live = $game('401000802', 'LIVE', ['home_score' => 50, 'away_score' => 47]);
+    PlayerGameStat::create(['game_id' => $live->id, 'player_id' => 1, 'team_id' => $bos->id, 'pts' => 10]);
+    PlayerGameStat::create(['game_id' => $live->id, 'player_id' => 2, 'team_id' => $lal->id, 'pts' => 4]);
+    // Bia cravou tudo "se acabasse agora": BOS, 1 a 5, MVP Jogador 1 = 1 + 2 + 3.
+    GameShotCall::create([
+        'user_id' => $this->bia->id, 'game_id' => $live->id, 'winner_team_id' => $bos->id, 'margin_band' => 'M1_5',
+        'mvp_player_id' => 1, 'status' => 'LOCKED',
+    ]);
+
+    $lineup = function (User $user, array $players, int $cestinha) use ($r3) {
+        $team = FantasyTeam::create(['user_id' => $user->id, 'round_id' => $r3->id, 'cestinha_id' => $cestinha, 'balance' => 0, 'patrimony' => 100]);
+        foreach ($players as $slot => $id) {
+            $team->players()->create(['slot' => $slot, 'player_id' => $id, 'bought_at_price' => 10]);
+        }
+    };
+    $lineup($this->ana, ['PG' => 1, 'SG' => 2], 1); // 10 × 2 + 4 = 24, × 1,01
+    $lineup($this->bia, ['SG' => 2], 2);            // 4 × 2 = 8
+    $lineup($this->caio, ['PG' => 1], 1);           // 20, mas não conta
+
+    // Sem escolher rodada, mostra a que está rolando.
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=round")
+        ->assertJsonPath('meta.round.number', 3)
+        ->assertJsonPath('meta.round.provisional', true)
+        ->assertJsonPath('meta.round.live', true)
+        ->assertJsonPath('data.0.user.handle', 'ana')->assertJsonPath('data.0.score', 24.24)
+        ->assertJsonPath('data.1.user.handle', 'bia')->assertJsonPath('data.1.score', 8)
+        ->assertJsonPath('data.2.user.handle', 'caio')->assertJsonPath('data.2.score', 0);
+
+    // De novo, agora saindo do cache.
+    $this->actingAs($this->bia)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=season")
+        ->assertOk()->assertJsonPath('data.0.score', 24.24);
+
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=shotcall&period=season")
+        ->assertJsonPath('data.0.user.handle', 'bia')->assertJsonPath('data.0.score', 6)
+        ->assertJsonPath('data.1.user.handle', 'ana')->assertJsonPath('data.1.score', 1);
+
+    // Patrimônio não tem parcial.
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=patrimony")
+        ->assertJsonPath('meta.round.provisional', false)->assertJsonPath('meta.round.live', false);
 });
