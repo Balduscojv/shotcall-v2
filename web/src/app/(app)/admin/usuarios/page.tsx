@@ -125,15 +125,23 @@ async function UsersList({ searchParams }: { searchParams: Promise<Search> }) {
                     </span>
                     <span className="truncate text-sm">
                       <span className="text-cyan">@{user.handle}</span>
+                      {user.equipped?.title && <span className="text-subtle"> · {user.equipped.title.name}</span>}
                       {user.email && <span className="text-subtle"> · {user.email}</span>}
                     </span>
                   </span>
                 </Link>
-                {isMe ? (
-                  <span className="text-sm font-bold text-subtle">Você não pode mudar o próprio papel</span>
-                ) : (
-                  user.handle && <RoleSelect key={userRole} handle={user.handle} name={user.name} current={userRole} />
-                )}
+                <div className="flex flex-wrap items-start justify-end gap-2">
+                  {user.handle && (
+                    <Link href={`/admin/usuarios/${user.handle}/premios`} className={buttonClass("outline", "md", "px-4")}>
+                      Prêmios
+                    </Link>
+                  )}
+                  {isMe ? (
+                    <span className="inline-flex h-11 items-center text-sm font-bold text-subtle">Você não pode mudar o próprio papel</span>
+                  ) : (
+                    user.handle && <RoleSelect key={userRole} handle={user.handle} name={user.name} current={userRole} />
+                  )}
+                </div>
               </li>
             );
           })}

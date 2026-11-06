@@ -1,13 +1,17 @@
 import { Suspense } from "react";
+import { requireUser } from "@/lib/auth";
 import { serverApi } from "@/lib/server-api";
-import { formatDay, rarityLabel, rarityStyle, slotLabel } from "@/lib/labels";
+import { slotHint, slotLabel, slots } from "@/lib/labels";
 import { getProfile } from "@/lib/profile";
-import type { Award } from "@/lib/types";
+import type { Cosmetic } from "@/lib/types";
+import { CosmeticCard } from "@/components/cosmetics/CosmeticCard";
+import { EquipButton } from "@/components/cosmetics/EquipButton";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
 
 export const metadata = { title: "Prêmios" };
 
-// Aba "Prêmios": cosméticos conquistados com acerto nos palpites e títulos de liga.
+// Aba "Prêmios". No próprio perfil é a coleção, com o botão de usar cada prêmio (um por tipo).
+// Admin tem acesso a todos, então vê o catálogo inteiro.
 export default function AwardsTab({ params }: PageProps<"/u/[handle]/premios">) {
   return (
     <Suspense fallback={<TabSkeleton />}>
@@ -16,53 +20,91 @@ export default function AwardsTab({ params }: PageProps<"/u/[handle]/premios">) 
   );
 }
 
+const initialsOf = (name: string) =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
 async function Awards({ params }: Pick<PageProps<"/u/[handle]/premios">, "params">) {
   const { handle } = await params;
   const profile = await getProfile(handle);
-  const awards = await serverApi<{ data: Award[]; meta: { collection_total: number } }>(
-    `/users/${encodeURIComponent(handle)}/awards`,
-  );
   const own = profile.friendship === "SELF";
 
+  if (!own) {
+    const awards = await serverApi<{ data: Cosmetic[]; meta: { collection_total: number } }>(
+      `/users/${encodeURIComponent(handle)}/awards`,
+    );
+    return (
+      <section aria-labelledby="h-premios" className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="h-premios" className="font-display text-2xl">PRÊMIOS</h2>
+          <span className="font-bold text-muted">
+            {awards.data.length} de {awards.meta.collection_total} da coleção
+          </span>
+        </div>
+        {awards.data.length === 0 ? (
+          <EmptyState title="NENHUM PRÊMIO AINDA">Os prêmios conquistados aparecem aqui.</EmptyState>
+        ) : (
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+            {awards.data.map((award) => (
+              <CosmeticCard key={award.key} cosmetic={award} initials={initialsOf(profile.name)} />
+            ))}
+          </ul>
+        )}
+      </section>
+    );
+  }
+
+  const [me, { data: collection }] = await Promise.all([requireUser(), serverApi<{ data: Cosmetic[] }>("/me/cosmetics")]);
+  const isAdmin = me.role === "admin";
+  const initials = initialsOf(profile.name);
+
   return (
-    <section aria-labelledby="h-premios" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="h-premios" className="font-display text-2xl">PRÊMIOS</h2>
-        <span className="font-bold text-muted">
-          {awards.data.length} de {awards.meta.collection_total} da coleção 2026-27
-        </span>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-display text-2xl">MEUS PRÊMIOS</h2>
+        <p className="text-muted">
+          {isAdmin
+            ? "Como admin, você pode usar qualquer prêmio do catálogo."
+            : "Escolha um de cada tipo para usar no seu perfil. Novos prêmios chegam jogando."}
+        </p>
       </div>
 
-      {awards.data.length === 0 ? (
-        <EmptyState title={own ? "A VITRINE ESTÁ VAZIA" : "NENHUM PRÊMIO AINDA"}>
-          {own
-            ? "Acerte 70% ou mais nos shot calls de jogo, da semana ou da temporada para desbloquear molduras, banners e títulos. Campeão de liga também leva troféu."
-            : "Os prêmios conquistados aparecem aqui."}
-        </EmptyState>
-      ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
-          {awards.data.map((award) => (
-            <li
-              key={award.key}
-              className="flex flex-col gap-3 rounded-2xl border-[3px] border-ink bg-panel p-4 shadow-hard"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className={`rounded-md border-2 border-ink px-2 py-0.5 font-display text-[11px] ${rarityStyle[award.rarity]}`}>
-                  {rarityLabel[award.rarity].toUpperCase()}
-                </span>
-                {award.equipped && <span className="text-xs font-extrabold text-lime">EM USO</span>}
+      {slots.map((slot) => {
+        const items = collection.filter((c) => c.slot === slot);
+        const inUse = items.find((c) => c.equipped);
+
+        return (
+          <section key={slot} aria-labelledby={`h-${slot}`} className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div className="flex flex-col">
+                <h3 id={`h-${slot}`} className="font-display text-lg">{slotLabel[slot].toUpperCase()}</h3>
+                <span className="text-sm text-subtle">{slotHint[slot]}</span>
               </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-bold text-subtle">{slotLabel[award.slot] ?? award.slot}</span>
-                <span className="text-lg leading-snug font-extrabold">{award.name}</span>
-              </div>
-              <p className="mt-auto text-sm text-muted">
-                {award.reason} · {formatDay(award.unlocked_at)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+              {inUse && <EquipButton slot={slot} cosmeticKey={null} label={`Não usar ${slotLabel[slot].toLowerCase()}`} />}
+            </div>
+            {items.length === 0 ? (
+              <EmptyState title="NADA AQUI AINDA">Continue jogando para liberar prêmios deste tipo.</EmptyState>
+            ) : (
+              <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                {items.map((item) => (
+                  <CosmeticCard
+                    key={item.key}
+                    cosmetic={item}
+                    initials={initials}
+                    note={isAdmin && !item.owned ? "Acesso de admin" : undefined}
+                  >
+                    {!item.equipped && <EquipButton slot={slot} cosmeticKey={item.key} label="Usar" />}
+                  </CosmeticCard>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+    </div>
   );
 }

@@ -130,11 +130,14 @@ it('lista ligas visíveis e prêmios conquistados', function () {
         ->assertJsonPath('data.0.is_global', true)->assertJsonPath('data.1.role', 'OWNER');
     $this->actingAs($this->ana)->getJson('/api/users/bia/leagues')->assertJsonCount(1, 'data');
 
-    $this->bia->cosmetics()->attach(Cosmetic::where('key', 'game-silver-frame')->value('id'), [
+    $this->bia->cosmetics()->attach(Cosmetic::where('key', 'welcome-frame')->value('id'), [
         'unlocked_at' => now(), 'unlock_reason' => '70% nos últimos 20 jogos',
     ]);
     $this->actingAs($this->ana)->getJson('/api/users/bia/awards')
-        ->assertJsonPath('data.0.name', 'Moldura Prata')
+        ->assertJsonPath('data.0.name', 'Aro Laranja')
+        ->assertJsonPath('data.0.slot', 'FRAME')
         ->assertJsonPath('data.0.reason', '70% nos últimos 20 jogos')
+        ->assertJsonPath('data.0.equipped', false)
+        ->assertJsonMissingPath('data.0.trigger')
         ->assertJsonPath('meta.collection_total', Cosmetic::count());
 });

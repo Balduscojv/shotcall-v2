@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\UserCosmeticController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileMediaController;
@@ -22,6 +24,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('me/{kind}', [ProfileMediaController::class, 'update'])->whereIn('kind', ['avatar', 'banner'])->middleware('throttle:20,1');
     Route::delete('me/{kind}', [ProfileMediaController::class, 'destroy'])->whereIn('kind', ['avatar', 'banner']);
 
+    // Meus prêmios: coleção e o que está em uso (um por tipo)
+    Route::get('me/cosmetics', [CosmeticController::class, 'index']);
+    Route::put('me/cosmetics/{slot}', [CosmeticController::class, 'equip'])->whereIn('slot', ['banner', 'frame', 'title']);
+
     // Perfil por @ e suas abas
     Route::prefix('users/{user:handle}')->controller(ProfileController::class)->group(function () {
         Route::get('/', 'show');
@@ -41,5 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('admin')->middleware('role:admin')->group(function () {
         Route::get('users', [UserRoleController::class, 'index']);
         Route::patch('users/{user:handle}/role', [UserRoleController::class, 'update']);
+        Route::get('users/{user:handle}/cosmetics', [UserCosmeticController::class, 'index']);
+        Route::post('users/{user:handle}/cosmetics', [UserCosmeticController::class, 'store']);
+        Route::delete('users/{user:handle}/cosmetics/{cosmetic:key}', [UserCosmeticController::class, 'destroy']);
     });
 });

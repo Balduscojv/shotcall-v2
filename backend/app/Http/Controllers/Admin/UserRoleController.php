@@ -24,7 +24,7 @@ class UserRoleController extends Controller
             'q.max' => 'A busca pode ter até 64 caracteres.',
         ]);
 
-        $users = User::query()
+        $users = User::query()->withEquipped()
             ->when($request->filled('role'), fn ($query) => $query->where('role', $request->string('role')))
             ->when($request->filled('q'), function ($query) use ($request) {
                 $term = '%'.mb_strtolower($request->string('q')).'%';

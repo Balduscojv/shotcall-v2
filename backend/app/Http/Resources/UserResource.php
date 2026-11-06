@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Cosmetic;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,6 +24,18 @@ class UserResource extends JsonResource
             ),
             'avatar_url' => $this->avatar_url,
             'banner_url' => $this->banner_url,
+            // Prêmios em uso (só quando a consulta usou withEquipped, para não gerar N+1).
+            'equipped' => $this->when($this->relationLoaded('equippedFrame'), fn () => [
+                'banner' => $this->equippedBanner ? self::cosmetic($this->equippedBanner) : null,
+                'frame' => $this->equippedFrame ? self::cosmetic($this->equippedFrame) : null,
+                'title' => $this->equippedTitle ? self::cosmetic($this->equippedTitle) : null,
+            ]),
         ];
+    }
+
+    /** @return array{key: string, name: string, asset_key: string|null, rarity: string} */
+    private static function cosmetic(Cosmetic $cosmetic): array
+    {
+        return ['key' => $cosmetic->key, 'name' => $cosmetic->name, 'asset_key' => $cosmetic->asset_key, 'rarity' => $cosmetic->rarity];
     }
 }

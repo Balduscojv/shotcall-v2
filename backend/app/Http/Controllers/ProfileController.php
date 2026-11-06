@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\AwardResource;
+use App\Http\Resources\CosmeticResource;
 use App\Http\Resources\ProfileLeagueResource;
 use App\Http\Resources\ProfileResource;
 use App\Http\Resources\ShotCallHistoryResource;
@@ -28,7 +28,7 @@ class ProfileController extends Controller
     {
         $viewer = $request->user();
 
-        $resource = new ProfileResource($user);
+        $resource = new ProfileResource($user->load(['equippedBanner', 'equippedFrame', 'equippedTitle']));
         $resource->friendship = $this->friends->status($viewer, $user);
         $resource->counts = [
             'shot_calls' => $this->shotCallsQuery($viewer, $user)->count(),
@@ -58,7 +58,11 @@ class ProfileController extends Controller
 
     public function awards(User $user): AnonymousResourceCollection
     {
-        return AwardResource::collection($user->cosmetics()->orderByPivot('unlocked_at', 'desc')->get())
+        $equipped = $user->equippedIds();
+        $awards = $user->cosmetics()->orderByPivot('unlocked_at', 'desc')->get()
+            ->each(fn (Cosmetic $c) => $c->setAttribute('is_equipped', in_array($c->id, $equipped, true)));
+
+        return CosmeticResource::collection($awards)
             ->additional(['meta' => ['collection_total' => Cosmetic::count()]]);
     }
 
@@ -78,7 +82,7 @@ class ProfileController extends Controller
 
     public function friends(User $user): AnonymousResourceCollection
     {
-        return UserResource::collection($this->friends->friendsOf($user)->orderBy('name')->get());
+        return UserResource::collection($this->friends->friendsOf($user)->withEquipped()->orderBy('name')->get());
     }
 
     /** Palpite de outra pessoa só aparece depois que o jogo começou; antes disso é segredo. */

@@ -1,4 +1,6 @@
+import { bannerClass } from "@/lib/cosmetics";
 import { getProfile } from "@/lib/profile";
+import { TitleBadge } from "@/components/cosmetics/CosmeticPreview";
 import { formatMonthYear, formatRate, tierColor, tierLabel } from "@/lib/labels";
 import { Avatar } from "./Avatar";
 import { FriendButton } from "./FriendButton";
@@ -14,12 +16,17 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
   const profile = await getProfile(handle);
   const own = profile.friendship === "SELF";
   const game = profile.accuracy.GAME;
+  const banner = bannerClass(profile.equipped?.banner);
+  const title = profile.equipped?.title;
 
   return (
     <section aria-label={`Perfil de ${profile.name}`} className="flex flex-col gap-6">
       <div className="relative">
         <div className="relative aspect-[1200/280] min-h-36 w-full overflow-hidden rounded-b-3xl border-x-[3px] border-b-[3px] border-ink bg-[#1C1730] sm:rounded-3xl sm:border-[3px] sm:shadow-hard-lg">
-          {profile.banner_url ? (
+          {/* Vale a última escolha: banner-prêmio em uso, senão a imagem enviada, senão a grade padrão. */}
+          {banner ? (
+            <div className={`size-full ${banner}`} aria-hidden="true" />
+          ) : profile.banner_url ? (
             // eslint-disable-next-line @next/next/no-img-element -- imagem do usuário servida pelo Laravel
             <img src={profile.banner_url} alt="" className="size-full object-cover" />
           ) : (
@@ -41,6 +48,7 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
           <h1 className="font-display text-[clamp(26px,3.5vw,40px)] leading-tight break-words">{profile.name}</h1>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted">
             <span className="font-extrabold text-cyan">@{profile.handle}</span>
+            {title && <TitleBadge title={title} />}
             {profile.member_since && <span>Na quadra desde {formatMonthYear(profile.member_since)}</span>}
           </p>
           {game?.tier && game.rate !== null && (

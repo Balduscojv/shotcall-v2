@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -47,8 +49,27 @@ class User extends Authenticatable
         return $this->belongsToMany(League::class, 'league_members')->withPivot('role', 'joined_round_number')->withTimestamps();
     }
 
+    /** Prêmios liberados para o usuário (por gatilho ou pela moderação). */
     public function cosmetics(): BelongsToMany
     {
-        return $this->belongsToMany(Cosmetic::class, 'user_cosmetics')->withPivot('unlocked_at', 'unlock_reason', 'equipped');
+        return $this->belongsToMany(Cosmetic::class, 'user_cosmetics')->withPivot('unlocked_at', 'unlock_reason', 'granted_by');
+    }
+
+    public function equippedBanner(): BelongsTo { return $this->belongsTo(Cosmetic::class, 'equipped_banner_id'); }
+
+    public function equippedFrame(): BelongsTo { return $this->belongsTo(Cosmetic::class, 'equipped_frame_id'); }
+
+    public function equippedTitle(): BelongsTo { return $this->belongsTo(Cosmetic::class, 'equipped_title_id'); }
+
+    /** Carrega o que o usuário está usando, para mostrar moldura, título e banner sem N+1. */
+    public function scopeWithEquipped(Builder $query): void
+    {
+        $query->with(['equippedBanner', 'equippedFrame', 'equippedTitle']);
+    }
+
+    /** IDs dos prêmios em uso, para marcar "em uso" nas listas. @return list<int> */
+    public function equippedIds(): array
+    {
+        return array_values(array_filter([$this->equipped_banner_id, $this->equipped_frame_id, $this->equipped_title_id]));
     }
 }

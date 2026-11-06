@@ -1,4 +1,4 @@
-import type { AccuracyMode, Rarity, Tier, UserRole } from "./types";
+import type { AccuracyMode, CosmeticSlot, Rarity, Tier, UserRole } from "./types";
 
 export const roleLabel: Record<UserRole, string> = {
   admin: "Admin",
@@ -56,18 +56,33 @@ export const rarityStyle: Record<Rarity, string> = {
   LEGENDARY: "bg-hype text-ink",
 };
 
-export const slotLabel: Record<string, string> = {
-  FRAME: "Moldura",
+export const slotLabel: Record<CosmeticSlot, string> = {
   BANNER: "Banner",
+  FRAME: "Moldura",
   TITLE: "Título",
-  SHOWCASE: "Vitrine",
-  BALL: "Bola",
-  COURT: "Quadra",
-  CELEBRATION: "Comemoração",
-  CARD_FRAME: "Moldura de card",
-  CESTINHA_FX: "Efeito do Cestinha",
-  CREST_TAG: "Selo",
 };
+
+export const slotHint: Record<CosmeticSlot, string> = {
+  BANNER: "Fundo do topo do perfil",
+  FRAME: "Contorno da foto de perfil",
+  TITLE: "Aparece ao lado do seu @",
+};
+
+export const slots: CosmeticSlot[] = ["BANNER", "FRAME", "TITLE"];
+
+/** De onde o prêmio veio (o `source` do catálogo). */
+export const sourceLabel: Record<string, string> = {
+  SIGNUP: "Boas-vindas",
+  SPECIAL: "Exclusivo",
+  GAME: "Palpites de jogo",
+  WEEK: "Cartela da semana",
+  SEASON: "Temporada",
+  BRACKET: "Chave dos playoffs",
+  LEAGUE: "Liga",
+};
+
+export const triggerLabel = (trigger: string | null | undefined) =>
+  !trigger ? "Só pela moderação" : trigger === "SIGNUP" ? "Ao criar a conta" : trigger;
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", timeZone: "America/Sao_Paulo" });
 const monthYearFmt = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });

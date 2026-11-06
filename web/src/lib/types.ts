@@ -11,6 +11,34 @@ export type User = {
   banner_url: string | null;
   /** Só vem para o próprio usuário e para admins. */
   role?: UserRole;
+  /** Prêmios em uso. Vem no /me, no perfil e nas listas de usuários. */
+  equipped?: Equipped;
+};
+
+export type CosmeticSlot = "BANNER" | "FRAME" | "TITLE";
+
+/** Resumo de um prêmio em uso, o suficiente para desenhar. */
+export type EquippedItem = { key: string; name: string; asset_key: string | null; rarity: Rarity };
+
+export type Equipped = { banner: EquippedItem | null; frame: EquippedItem | null; title: EquippedItem | null };
+
+/** Prêmio do catálogo (app/Http/Resources/CosmeticResource.php). */
+export type Cosmetic = {
+  key: string;
+  name: string;
+  description: string | null;
+  slot: CosmeticSlot;
+  rarity: Rarity;
+  source: string | null;
+  /** Só para admin: o que libera o prêmio (SIGNUP, ...). Nulo = só pela moderação. */
+  trigger?: string | null;
+  asset_key: string | null;
+  package_key: string | null;
+  /** Em coleções de um usuário: se ele tem e se está usando. */
+  owned?: boolean;
+  equipped?: boolean;
+  unlocked_at: string | null;
+  reason: string | null;
 };
 
 /** Relação de quem vê com o dono do perfil. */
@@ -44,18 +72,6 @@ export type Paginated<T> = {
 };
 
 export type Rarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
-
-export type Award = {
-  key: string;
-  name: string;
-  slot: string;
-  rarity: Rarity;
-  source: "GAME" | "WEEK" | "SEASON" | "BRACKET" | "LEAGUE";
-  package_key: string | null;
-  unlocked_at: string;
-  reason: string;
-  equipped: boolean;
-};
 
 export type ProfileLeague = {
   slug: string;

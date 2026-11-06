@@ -17,6 +17,11 @@ class ProfileMediaController extends Controller
     {
         $user = $this->images->store($request->user(), $kind, $request->file('image'));
 
+        // Banner enviado agora passa na frente do banner-prêmio: vale a última escolha.
+        if ($kind === 'banner' && $user->equipped_banner_id !== null) {
+            $user->forceFill(['equipped_banner_id' => null])->save();
+        }
+
         return (new UserResource($user))->response()->setStatusCode(200);
     }
 

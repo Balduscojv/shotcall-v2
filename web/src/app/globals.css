@@ -88,6 +88,74 @@
   background-image: linear-gradient(100deg, var(--color-orange), var(--color-pink) 60%, var(--color-purple));
 }
 
+/* Banners-prêmio (web/src/lib/cosmetics.ts). A grade da quadra fica por cima da cor. */
+/* Pôr do Sol na Quadra: ilustração em public/cosmetics, já na proporção do banner (1200×280),
+   com versão 2x para telas retina. No celular as laterais cortam; o centro sempre aparece. */
+@utility banner-sunset {
+  background-color: #b2557a;
+  background-image: url("/cosmetics/welcome-banner.webp");
+  background-image: image-set(url("/cosmetics/welcome-banner.webp") 1x, url("/cosmetics/welcome-banner@2x.webp") 2x);
+  background-size: cover;
+  background-position: center;
+}
+
+@utility banner-arena {
+  background-color: #3a2312;
+  background-image: url("/cosmetics/welcome-banner-arena.webp");
+  background-image: image-set(url("/cosmetics/welcome-banner-arena.webp") 1x, url("/cosmetics/welcome-banner-arena@2x.webp") 2x);
+  background-size: cover;
+  background-position: center;
+}
+
+@utility banner-street {
+  background-color: #4a3530;
+  background-image: url("/cosmetics/welcome-banner-street.webp");
+  background-image: image-set(url("/cosmetics/welcome-banner-street.webp") 1x, url("/cosmetics/welcome-banner-street@2x.webp") 2x);
+  background-size: cover;
+  background-position: center;
+}
+
+@utility banner-rare {
+  background-color: #0e3b4a;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(34, 211, 238, 0.18) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(-45deg, rgba(34, 211, 238, 0.18) 0 2px, transparent 2px 24px);
+}
+
+@utility banner-epic {
+  background-color: #2a1659;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(139, 92, 246, 0.3) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(-45deg, rgba(139, 92, 246, 0.3) 0 2px, transparent 2px 24px);
+}
+
+@utility banner-legendary {
+  background-image:
+    repeating-linear-gradient(45deg, rgba(10, 10, 10, 0.2) 0 2px, transparent 2px 24px),
+    linear-gradient(100deg, var(--color-orange), var(--color-pink) 60%, var(--color-purple));
+}
+
+/* Molduras-prêmio desenhadas (web/src/lib/cosmetics.ts). A borda fica transparente e o desenho vai
+   no fundo em border-box; o miolo (padding-box) continua com a cor da foto vazia.
+   Aro Laranja: o contorno vira couro de bola de basquete, laranja com granulado e borda escura.
+   As costuras são as de uma bola atrás da foto: as retas (vertical e horizontal) cortam o aro
+   nos quatro pontos cardeais, e as duas curvas (círculos com centro fora da foto, um de cada
+   lado) cortam perto do topo e da base. Tudo em %/graus, então acompanha qualquer tamanho. */
+@utility frame-ball {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    repeating-conic-gradient(from -1.5deg, var(--color-ink) 0 3deg, transparent 3deg 90deg) border-box,
+    radial-gradient(circle at 140% 50%, transparent 56.4%, var(--color-ink) 56.4% 58%, transparent 58%) border-box,
+    radial-gradient(circle at -40% 50%, transparent 56.4%, var(--color-ink) 56.4% 58%, transparent 58%) border-box,
+    radial-gradient(rgba(10, 10, 10, 0.35) 0.7px, transparent 1.1px) 0 0 / 2.5px 2.5px border-box,
+    radial-gradient(rgba(255, 255, 255, 0.12) 0.6px, transparent 1px) 1px 1px / 4px 4px border-box,
+    radial-gradient(circle, #ff8a4c 0%, #ff5a1f 60%, #c9400c 100%) border-box;
+  box-shadow:
+    0 0 0 1.5px var(--color-ink),
+    inset 0 0 0 1.5px var(--color-ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
