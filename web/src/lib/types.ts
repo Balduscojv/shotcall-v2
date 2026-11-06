@@ -1,5 +1,7 @@
 // Formatos das API Resources do Laravel (app/Http/Resources).
 
+export type UserRole = "admin" | "moderator" | "player";
+
 export type User = {
   id: number;
   name: string;
@@ -7,6 +9,8 @@ export type User = {
   email?: string;
   avatar_url: string | null;
   banner_url: string | null;
+  /** Só vem para o próprio usuário e para admins. */
+  role?: UserRole;
 };
 
 /** Relação de quem vê com o dono do perfil. */

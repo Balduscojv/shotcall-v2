@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AdminNavLink } from "@/components/admin/AdminNavLink";
 import { Logo } from "@/components/ui/Logo";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 
@@ -10,6 +12,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Logo href="/perfil" />
           <nav aria-label="Principal" className="flex items-center gap-1 sm:gap-3">
+            <Suspense fallback={null}>
+              <AdminNavLink />
+            </Suspense>
             <Link href="/perfil" className="inline-flex h-11 items-center px-3 font-bold text-chalk no-underline hover:text-lime">
               Meu perfil
             </Link>

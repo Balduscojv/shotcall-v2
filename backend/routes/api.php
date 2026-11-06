@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\ProfileController;
@@ -35,4 +36,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('friends', [FriendshipController::class, 'store'])->middleware('throttle:30,1');
     Route::post('friends/{user:handle}/accept', [FriendshipController::class, 'accept']);
     Route::delete('friends/{user:handle}', [FriendshipController::class, 'destroy']);
+
+    // Administração — admin tem acesso completo ao sistema e às configurações.
+    Route::prefix('admin')->middleware('role:admin')->group(function () {
+        Route::get('users', [UserRoleController::class, 'index']);
+        Route::patch('users/{user:handle}/role', [UserRoleController::class, 'update']);
+    });
 });

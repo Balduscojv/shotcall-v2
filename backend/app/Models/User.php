@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -19,13 +20,23 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    /** `role` fica fora do Fillable de propósito: ninguém escolhe o próprio papel no cadastro. */
+    protected $attributes = [
+        'role' => 'player',
+    ];
+
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class,
         ];
     }
+
+    public function isAdmin(): bool { return $this->role === UserRole::Admin; }
+
+    public function isModerator(): bool { return $this->role === UserRole::Moderator; }
 
     public function shotCalls(): HasMany { return $this->hasMany(GameShotCall::class); }
 

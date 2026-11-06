@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Sessão por cookie para o front Next (mesma origem via rewrite em /api).
         $middleware->statefulApi();
+        $middleware->alias(['role' => \App\Http\Middleware\EnsureUserHasRole::class]);
         // Usuário logado batendo em rota "guest" recebe 409 em vez de redirect HTML.
         $middleware->redirectUsersTo(fn () => abort(409, 'Você já está logado.'));
     })

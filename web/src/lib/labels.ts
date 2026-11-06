@@ -1,4 +1,18 @@
-import type { AccuracyMode, Rarity, Tier } from "./types";
+import type { AccuracyMode, Rarity, Tier, UserRole } from "./types";
+
+export const roleLabel: Record<UserRole, string> = {
+  admin: "Admin",
+  moderator: "Moderador",
+  player: "Jogador",
+};
+
+export const roleStyle: Record<UserRole, string> = {
+  admin: "bg-orange text-ink",
+  moderator: "bg-cyan text-ink",
+  player: "bg-surface text-chalk",
+};
+
+export const roles = Object.keys(roleLabel) as UserRole[];
 
 export const tierLabel: Record<Tier, string> = {
   SILVER: "Prata",
