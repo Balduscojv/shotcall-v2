@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Services\Leagues\JoinGlobalLeague;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -27,9 +28,12 @@ class User extends Authenticatable
         'role' => 'player',
     ];
 
-    /** As notificações são polimórficas (sem chave estrangeira): saem junto com o usuário. */
     protected static function booted(): void
     {
+        // Todo usuário está na Liga Global, venha de onde vier (cadastro, login social, moderação).
+        static::created(fn (User $user) => app(JoinGlobalLeague::class)($user));
+
+        // As notificações são polimórficas (sem chave estrangeira): saem junto com o usuário.
         static::deleting(fn (User $user) => $user->notifications()->delete());
     }
 

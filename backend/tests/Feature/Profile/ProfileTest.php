@@ -6,7 +6,6 @@ use App\Models\GameShotCall;
 use App\Models\League;
 use App\Models\Player;
 use App\Models\Round;
-use App\Models\Team;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
@@ -51,7 +50,7 @@ it('troca e remove foto e banner, recortando para o tamanho certo', function () 
     expect($avatar)->toStartWith('/storage/avatars/');
     $path = str($avatar)->after('/storage/')->toString();
     Storage::disk('public')->assertExists($path);
-    [$w, $h] = getimagesizefromstring(Storage::disk("public")->get($path));
+    [$w, $h] = getimagesizefromstring(Storage::disk('public')->get($path));
     expect([$w, $h])->toBe([512, 512]);
 
     $this->actingAs($this->ana)
@@ -124,7 +123,7 @@ it('lista ligas visíveis e prêmios conquistados', function () {
         'invite_code' => 'ABC123', 'competitions' => ['FANTASY'],
     ]);
     $privada->members()->attach($this->bia->id, ['role' => 'OWNER']);
-    League::where('is_global', true)->first()->members()->attach($this->bia->id, ['role' => 'MEMBER']);
+    // A Liga Global ela já tem desde que a conta foi criada.
 
     $this->actingAs($this->bia)->getJson('/api/users/bia/leagues')->assertJsonCount(2, 'data')
         ->assertJsonPath('data.0.is_global', true)->assertJsonPath('data.1.role', 'OWNER');

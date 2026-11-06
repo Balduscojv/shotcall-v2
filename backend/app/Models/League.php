@@ -30,9 +30,10 @@ class League extends Model
         return $this->belongsToMany(User::class, 'league_members')->withPivot('role', 'joined_round_number')->withTimestamps();
     }
 
+    /** Sem limite (max_members nulo), como a Liga Global, nunca enche. */
     public function isFull(): bool
     {
-        return $this->members()->count() >= $this->max_members;
+        return $this->max_members !== null && $this->members()->count() >= $this->max_members;
     }
 
     public function hasMember(User $user): bool

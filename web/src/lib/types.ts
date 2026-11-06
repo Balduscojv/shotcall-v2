@@ -231,7 +231,8 @@ export type ProfileLeague = {
   privacy: LeaguePrivacy;
   competitions: Competition[];
   members_count: number;
-  max_members: number;
+  /** Nulo = sem limite (Liga Global). */
+  max_members: number | null;
   role: LeagueRole | null;
   rank: number | null;
   /** Temporada encerrada: ranking congelado, vira histórico. */
@@ -248,7 +249,8 @@ export type League = {
   competitions: Competition[];
   is_global: boolean;
   members_count: number;
-  max_members: number;
+  /** Nulo = sem limite (Liga Global). */
+  max_members: number | null;
   role: LeagueRole | null;
   /** Só para membros. */
   invite_code?: string;
@@ -257,7 +259,9 @@ export type League = {
 };
 
 /** Liga pública na busca (GET /leagues/search). */
-export type PublicLeague = Pick<League, "slug" | "name" | "color" | "description" | "competitions" | "members_count" | "max_members"> & {
+/** A global não aparece na busca nem tem convite: aqui sempre há limite. */
+export type PublicLeague = Pick<League, "slug" | "name" | "color" | "description" | "competitions" | "members_count"> & {
+  max_members: number;
   is_member: boolean;
 };
 

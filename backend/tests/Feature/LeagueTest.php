@@ -435,3 +435,25 @@ it('sem pontos antes, não mostra subida nem queda', function () {
     $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=season&round=2")
         ->assertJsonPath('data.0.move', null)->assertJsonPath('data.1.move', null);
 });
+
+it('liga global: sem limite e com todo usuário do sistema, menos a conta de sistema', function () {
+    $global = League::where('is_global', true)->first();
+    $system = User::where('handle', 'shotcall')->first();
+
+    expect($global->max_members)->toBeNull()
+        ->and($global->isFull())->toBeFalse()
+        // Criado fora do cadastro (factory): entra do mesmo jeito.
+        ->and($global->hasMember(User::factory()->create()))->toBeTrue()
+        ->and($global->members()->count())->toBe(User::count() - 1)
+        ->and($global->hasMember($system))->toBeFalse();
+
+    $this->actingAs($this->ana)->getJson('/api/leagues/global')
+        ->assertJsonPath('data.max_members', null)->assertJsonPath('data.members_count', User::count() - 1);
+
+    // Pelo cadastro, entra uma vez só.
+    $this->postJson('/api/auth/register', [
+        'name' => 'Dani', 'handle' => 'dani', 'email' => 'dani@exemplo.com', 'password' => 'senha-forte-123',
+    ])->assertCreated();
+    expect($global->members()->where('handle', 'dani')->count())->toBe(1);
+
+});

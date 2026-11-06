@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
         League::firstOrCreate(['is_global' => true], [
             'slug' => 'global', 'name' => 'Liga Global', 'color' => '#FF5A1F', 'owner_id' => $system->id,
             'privacy' => 'PUBLIC', 'invite_code' => Str::upper(Str::random(6)),
-            'competitions' => ['FANTASY', 'SHOTCALL'], 'max_members' => 65000,
+            'competitions' => ['FANTASY', 'SHOTCALL'], 'max_members' => null, // sem limite: todo usuário está nela
         ]);
     }
 }

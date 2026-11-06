@@ -9,7 +9,6 @@ use App\Http\Resources\UserResource;
 use App\Models\Cosmetic;
 use App\Models\User;
 use App\Services\Cosmetics\AwardService;
-use App\Services\Leagues\JoinGlobalLeague;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,11 +19,11 @@ use Illuminate\Validation\ValidationException;
 /** Login por sessão (Sanctum SPA): o Next fala com a API pelo mesmo domínio e o cookie é httpOnly. */
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request, JoinGlobalLeague $joinGlobal, AwardService $awards): UserResource
+    public function register(RegisterRequest $request, AwardService $awards): UserResource
     {
-        $user = DB::transaction(function () use ($request, $joinGlobal, $awards) {
+        // A entrada na Liga Global acontece na criação do usuário (User::booted).
+        $user = DB::transaction(function () use ($request, $awards) {
             $user = User::create($request->validated());
-            $joinGlobal($user);
             // Gatilho de cadastro: libera os prêmios de boas-vindas e já deixa equipados.
             $awards->fire($user, Cosmetic::TRIGGER_SIGNUP, equipIfEmpty: true);
 
