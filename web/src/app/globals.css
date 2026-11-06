@@ -19,6 +19,14 @@
   --color-yellow: #ffc83d;
   --color-danger: #ff6b6b;
 
+  /* Raridade dos prêmios: Comum, Raro, Épico e Exclusivo (chave LEGENDARY), este em ouro. */
+  --color-common: #10b981;
+  --color-rare: #06b6d4;
+  --color-epic: #8b5cf6;
+  --color-exclusive: #e6b325;
+  --color-gold-deep: #a67c1a;
+  --color-gold-light: #fff1b8;
+
   --font-sans: var(--font-manrope), system-ui, sans-serif;
   --font-display: var(--font-bungee), Impact, sans-serif;
   --font-score: var(--font-anton), Impact, sans-serif;
@@ -133,11 +141,19 @@
   background-position: center;
 }
 
-@utility banner-rare {
-  background-color: #0e3b4a;
+/* Banners padrão de cada raridade (prêmio sem arte própria): trama na cor da raridade. */
+@utility banner-common {
+  background-color: #08362a;
   background-image:
-    repeating-linear-gradient(45deg, rgba(34, 211, 238, 0.18) 0 2px, transparent 2px 24px),
-    repeating-linear-gradient(-45deg, rgba(34, 211, 238, 0.18) 0 2px, transparent 2px 24px);
+    repeating-linear-gradient(45deg, rgba(16, 185, 129, 0.22) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(-45deg, rgba(16, 185, 129, 0.22) 0 2px, transparent 2px 24px);
+}
+
+@utility banner-rare {
+  background-color: #073a45;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(6, 182, 212, 0.24) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(-45deg, rgba(6, 182, 212, 0.24) 0 2px, transparent 2px 24px);
 }
 
 @utility banner-epic {
@@ -147,10 +163,26 @@
     repeating-linear-gradient(-45deg, rgba(139, 92, 246, 0.3) 0 2px, transparent 2px 24px);
 }
 
+/* Ouro com brilho: o reflexo claro atravessa o metal na diagonal. Usado no Exclusivo. */
+@utility bg-gold {
+  background-color: var(--color-exclusive);
+  background-image: linear-gradient(
+    115deg,
+    var(--color-gold-deep) 0%,
+    var(--color-exclusive) 28%,
+    var(--color-gold-light) 48%,
+    var(--color-exclusive) 62%,
+    var(--color-gold-deep) 100%
+  );
+}
+
+/* Exclusivo (chave LEGENDARY): ouro escovado com trama fina. */
 @utility banner-legendary {
+  background-color: #2b1f05;
   background-image:
-    repeating-linear-gradient(45deg, rgba(10, 10, 10, 0.2) 0 2px, transparent 2px 24px),
-    linear-gradient(100deg, var(--color-orange), var(--color-pink) 60%, var(--color-purple));
+    repeating-linear-gradient(45deg, rgba(255, 241, 184, 0.14) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(-45deg, rgba(255, 241, 184, 0.14) 0 2px, transparent 2px 24px),
+    linear-gradient(115deg, #3d2b06 0%, var(--color-gold-deep) 35%, var(--color-exclusive) 55%, #4a3407 100%);
 }
 
 /* Molduras-prêmio desenhadas (web/src/lib/cosmetics.ts). A borda fica transparente e o desenho vai

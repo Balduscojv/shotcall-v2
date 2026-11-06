@@ -32,25 +32,26 @@ const titles: Record<string, string> = {
   "mission-splash-brothers": "bg-linear-to-r from-cyan to-yellow text-ink",
 };
 
+// Visual padrão de quem não tem arte nem cor própria: a cor da raridade.
 const bannerByRarity: Record<Rarity, string> = {
-  COMMON: "fence",
+  COMMON: "banner-common",
   RARE: "banner-rare",
   EPIC: "banner-epic",
   LEGENDARY: "banner-legendary",
 };
 
 const frameByRarity: Record<Rarity, string> = {
-  COMMON: "border-chalk",
-  RARE: "border-cyan",
-  EPIC: "border-purple",
-  LEGENDARY: "border-yellow",
+  COMMON: "border-common",
+  RARE: "border-rare",
+  EPIC: "border-epic",
+  LEGENDARY: "border-exclusive",
 };
 
 const titleByRarity: Record<Rarity, string> = {
-  COMMON: "bg-chalk text-ink",
-  RARE: "bg-cyan text-ink",
-  EPIC: "bg-purple text-ink",
-  LEGENDARY: "bg-hype text-ink",
+  COMMON: "bg-common text-ink",
+  RARE: "bg-rare text-ink",
+  EPIC: "bg-epic text-ink",
+  LEGENDARY: "bg-gold text-ink",
 };
 
 /** Sem moldura equipada: contorno discreto. */

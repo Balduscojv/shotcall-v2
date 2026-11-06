@@ -46,14 +46,16 @@ export const rarityLabel: Record<Rarity, string> = {
   COMMON: "Comum",
   RARE: "Raro",
   EPIC: "Épico",
-  LEGENDARY: "Lendário",
+  // A chave no banco continua LEGENDARY; para o jogador é "Exclusivo".
+  LEGENDARY: "Exclusivo",
 };
 
+/** Etiqueta da raridade (cores em globals.css: --color-common, -rare, -epic e o ouro do Exclusivo). */
 export const rarityStyle: Record<Rarity, string> = {
-  COMMON: "bg-surface text-chalk",
-  RARE: "bg-cyan text-ink",
-  EPIC: "bg-purple text-ink",
-  LEGENDARY: "bg-hype text-ink",
+  COMMON: "bg-common text-ink",
+  RARE: "bg-rare text-ink",
+  EPIC: "bg-epic text-ink",
+  LEGENDARY: "bg-gold text-ink",
 };
 
 export const slotLabel: Record<CosmeticSlot, string> = {

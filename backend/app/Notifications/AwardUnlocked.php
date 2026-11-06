@@ -37,7 +37,7 @@ class AwardUnlocked extends AppNotification
         return match ($this->cosmetic->rarity) {
             'RARE' => 'Raro',
             'EPIC' => 'Épico',
-            'LEGENDARY' => 'Lendário',
+            'LEGENDARY' => 'Exclusivo',
             default => 'Comum',
         };
     }
