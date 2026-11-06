@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { api, ApiError, type FieldErrors } from "@/lib/api";
 import { rarityLabel, slotLabel, slots } from "@/lib/labels";
-import type { AdminCosmetic, Mission, MissionCondition } from "@/lib/types";
+import type { AdminCosmetic, ConditionParam, Mission, MissionCondition } from "@/lib/types";
 import { CosmeticPreview } from "@/components/cosmetics/CosmeticPreview";
 import { Field } from "@/components/ui/Field";
+import { LeagueParamPicker } from "./LeagueParamPicker";
 import { buttonClass } from "@/components/ui/button";
 
 /** ISO da API -> valor de <input type="datetime-local"> no fuso de quem está vendo. */
@@ -168,18 +169,12 @@ export function MissionForm({
         {condition && condition.params.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {condition.params.map((p) => (
-              <Field
+              <ParamInput
                 key={p.name}
-                label={p.label}
-                name={`param-${p.name}`}
-                type="number"
-                inputMode="numeric"
-                min={p.min}
-                max={p.max}
+                param={p}
                 value={paramValue(p.name, p.default)}
-                onChange={(e) => setParams((list) => ({ ...list, [p.name]: e.target.value }))}
+                onChange={(v) => setParams((list) => ({ ...list, [p.name]: v }))}
                 error={err(`params.${p.name}`)}
-                hint={`${p.help ? `${p.help} ` : ""}De ${p.min} a ${p.max}.`}
               />
             ))}
           </div>
@@ -305,5 +300,78 @@ export function MissionForm({
         )}
       </div>
     </form>
+  );
+}
+
+/** Um parâmetro da condição: número livre, uma das opções ou uma liga (0 = qualquer). */
+function ParamInput({
+  param: p,
+  value,
+  onChange,
+  error,
+}: {
+  param: ConditionParam;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+}) {
+  if (p.type === "league") {
+    return (
+      <LeagueParamPicker
+        id={`param-${p.name}`}
+        label={p.label}
+        help={p.help}
+        value={Number(value)}
+        onChange={(v) => onChange(String(v))}
+        error={error}
+      />
+    );
+  }
+
+  if (p.type === "choice") {
+    const id = `param-${p.name}`;
+    return (
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={id} className="text-sm font-bold text-muted">
+          {p.label}
+        </label>
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-erro` : undefined}
+          className="h-12 rounded-xl border-2 border-ink bg-surface px-3 font-semibold text-chalk focus:border-cyan"
+        >
+          {p.options?.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {error ? (
+          <p id={`${id}-erro`} className="text-sm font-bold text-danger">
+            {error}
+          </p>
+        ) : (
+          p.help && <p className="text-sm text-subtle">{p.help}</p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Field
+      label={p.label}
+      name={`param-${p.name}`}
+      type="number"
+      inputMode="numeric"
+      min={p.min}
+      max={p.max}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      error={error}
+      hint={`${p.help ? `${p.help} ` : ""}De ${p.min} a ${p.max}.`}
+    />
   );
 }

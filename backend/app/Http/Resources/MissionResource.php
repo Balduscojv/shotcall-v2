@@ -23,6 +23,8 @@ class MissionResource extends JsonResource
             'condition' => $this->condition,
             'condition_label' => $condition?->label() ?? $this->condition,
             'params' => (object) ($this->params ?? []),
+            // Para a lista: "Liga" => "Liga do Rachão", "Competição" => "Fantasy".
+            'params_display' => (object) ($condition ? app(ConditionCatalog::class)->describe($condition, $this->params ?? []) : []),
             'secret' => $this->secret,
             'hint' => $this->hint,
             'active' => $this->active,

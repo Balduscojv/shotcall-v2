@@ -10,13 +10,16 @@ use App\Services\Missions\MissionRunner;
 /**
  * Terminou a temporada da liga até a posição N, numa liga com pelo menos M membros (plano:
  * "Prêmios de liga"). Campeão = posição 1 e 5 membros; pódio = até a 3ª e 10 membros.
- * O mínimo de membros evita liga de uma pessoa só para farmar prêmio.
+ * O mínimo de membros evita liga de uma pessoa só para farmar prêmio. Pode valer só para uma
+ * liga (ex.: prêmio da liga patrocinada) e só para uma competição.
  *
  * Lê os troféus que LeagueSeasonCloser grava antes de rodar as missões. Liga que disputa
  * fantasy e shot calls tem pódio em cada uma; vale a melhor colocação.
  */
 class LeagueRankCondition implements Condition
 {
+    use LeagueFilters;
+
     private const LABELS = ['FANTASY' => 'Fantasy', 'SHOTCALL' => 'Shot calls'];
 
     public function key(): string
@@ -31,14 +34,16 @@ class LeagueRankCondition implements Condition
 
     public function description(): string
     {
-        return 'Terminou a temporada de uma liga até a posição escolhida (em qualquer ranking que ela disputa), numa liga com o mínimo de membros. A Liga Global não conta.';
+        return 'Terminou a temporada de uma liga até a posição escolhida, numa liga com o mínimo de membros. Dá para limitar a uma liga e a uma competição. A Liga Global não conta.';
     }
 
     public function params(): array
     {
         return [
             ['name' => 'max_rank', 'label' => 'Até a posição', 'help' => '1 = só o campeão; 3 = pódio.', 'min' => 1, 'max' => 3, 'default' => 1],
-            ['name' => 'min_members', 'label' => 'Membros na liga (mínimo)', 'min' => 2, 'max' => 20, 'default' => 5],
+            $this->minMembersParam(),
+            $this->competitionParam(),
+            $this->leagueParam(),
         ];
     }
 
@@ -50,10 +55,12 @@ class LeagueRankCondition implements Condition
     public function achievers(Mission $mission, string $event, mixed $subject): array
     {
         /** @var League $subject */
-        $trophies = LeagueTrophy::with('season')
-            ->where('league_id', $subject->id)
+        if (! $this->leagueMatches($mission, $subject)) {
+            return [];
+        }
+
+        $trophies = $this->filterTrophies(LeagueTrophy::with('season')->where('league_id', $subject->id), $mission)
             ->where('rank', '<=', $mission->param('max_rank', 1))
-            ->where('members_count', '>=', $mission->param('min_members', 5))
             ->orderBy('rank')
             ->get();
 

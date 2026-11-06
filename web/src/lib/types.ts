@@ -404,8 +404,23 @@ export type AppNotification = {
 /** Prêmio na moderação do catálogo (GET /admin/cosmetics). */
 export type AdminCosmetic = Cosmetic & { active: boolean; owners_count: number; missions: { id: number; name: string }[] };
 
-/** Parâmetro de uma condição de missão (sempre inteiro). */
-export type ConditionParam = { name: string; label: string; help?: string; min: number; max: number; default: number };
+/**
+ * Parâmetro de uma condição de missão. O valor é sempre inteiro; o tipo diz como escolher:
+ * número livre, uma das opções, ou uma liga (0 = qualquer liga).
+ */
+export type ConditionParam = {
+  name: string;
+  label: string;
+  help?: string;
+  type?: "int" | "choice" | "league";
+  options?: { value: number; label: string }[];
+  min: number;
+  max: number;
+  default: number;
+};
+
+/** Liga para vincular a uma missão (GET /admin/missions/leagues). */
+export type MissionLeague = { id: number; name: string; slug: string; color: string; members_count: number; finished: boolean };
 
 /** Tipo de condição do catálogo (GET /admin/missions/conditions). */
 export type MissionCondition = { key: string; label: string; description: string; params: ConditionParam[] };
@@ -419,6 +434,8 @@ export type Mission = {
   condition: string;
   condition_label: string;
   params: Record<string, number>;
+  /** Parâmetros legíveis para a lista: rótulo => valor (nome da liga, da opção). */
+  params_display: Record<string, string>;
   secret: boolean;
   hint: string | null;
   active: boolean;

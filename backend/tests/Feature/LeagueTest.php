@@ -1,11 +1,13 @@
 <?php
 
+use App\Models\Cosmetic;
 use App\Models\FantasyTeam;
 use App\Models\Game;
 use App\Models\GameShotCall;
 use App\Models\League;
 use App\Models\LeagueStanding;
 use App\Models\LeagueTrophy;
+use App\Models\Mission;
 use App\Models\Player;
 use App\Models\PlayerGameStat;
 use App\Models\Round;
@@ -456,4 +458,80 @@ it('liga global: sem limite e com todo usuário do sistema, menos a conta de sis
     ])->assertCreated();
     expect($global->members()->where('handle', 'dani')->count())->toBe(1);
 
+});
+
+/** Missão de liga com o Capuz do Ceifador de recompensa (para não misturar com as do seeder). */
+function leagueMission(string $condition, array $params): Mission
+{
+    $mission = Mission::create([
+        'key' => "teste-{$condition}-".uniqid(), 'name' => 'Missão de teste', 'condition' => $condition,
+        'params' => $params, 'secret' => false, 'active' => true,
+    ]);
+    $mission->rewards()->attach(Cosmetic::where('key', 'frame-reaper')->value('id'));
+
+    return $mission;
+}
+
+$reaper = fn (User $user) => $user->cosmetics()->where('key', 'frame-reaper')->first()?->pivot->unlock_reason;
+
+it('prêmio vinculado a uma liga específica e a uma competição', function () use ($reaper) {
+    [$sponsored] = scoredLeague($this->ana, 5, ['name' => 'Liga Patrocinada']);
+    [$other, $otherUsers] = scoredLeague($this->bia, 5, ['name' => 'Outra Liga']);
+    leagueMission('league_rank', ['max_rank' => 1, 'min_members' => 5, 'competition' => 0, 'league_id' => $sponsored->id]);
+    // Só shot calls: ninguém pontuou em shot calls, então não sai.
+    $shotcallOnly = leagueMission('league_rank', ['max_rank' => 1, 'min_members' => 2, 'competition' => 2, 'league_id' => 0]);
+
+    app(LeagueSeasonCloser::class)->closeSeason(Season::first());
+
+    expect($reaper($this->ana))->toBe('Campeão da Liga Patrocinada · Fantasy 2026-27')
+        ->and($reaper($this->bia))->toBeNull();
+});
+
+it('contagem de vitórias: tricampeão só na terceira liga ganha', function () use ($reaper) {
+    leagueMission('league_wins', ['min_wins' => 3, 'max_rank' => 1, 'min_members' => 5, 'competition' => 0]);
+    $closer = app(LeagueSeasonCloser::class);
+    $season = Season::first();
+    $round2 = ($this->round)(2);
+
+    foreach (['Liga A', 'Liga B', 'Liga C'] as $i => $name) {
+        // Cada liga com membros novos; Ana entra em todas e faz a maior pontuação.
+        [$league, $users] = scoredLeague(User::factory()->create(), 5, ['name' => $name]);
+        addMember($league, $this->ana);
+        FantasyTeam::updateOrCreate(['user_id' => $this->ana->id, 'round_id' => $round2->id], ['balance' => 0, 'patrimony' => 100, 'points' => 999]);
+        $closer->close($league->fresh(), $season, $round2);
+
+        expect($reaper($this->ana))->toBe($i < 2 ? null : '3 títulos de liga')
+            // O dono de cada liga ficou em 2º: pódio, não título.
+            ->and($reaper($users[0]))->toBeNull();
+    }
+});
+
+it('prêmio de participação: terminou a temporada na liga patrocinada', function () use ($reaper) {
+    [$sponsored, $users] = scoredLeague($this->ana, 3, ['name' => 'Liga Patrocinada']);
+    leagueMission('league_season', ['league_id' => $sponsored->id, 'min_members' => 2]);
+
+    app(LeagueSeasonCloser::class)->closeSeason(Season::first());
+
+    expect(collect($users)->every(fn (User $u) => $reaper($u) === 'Temporada completa na Liga Patrocinada'))->toBeTrue();
+});
+
+it('moderação: busca a liga, valida o vínculo e mostra o nome na lista', function () {
+    $admin = User::factory()->admin()->create();
+    $league = createLeague($this->ana, ['name' => 'Liga Patrocinada']);
+    $global = League::where('is_global', true)->first();
+
+    $this->actingAs($admin)->getJson('/api/admin/missions/leagues?q=patroc')
+        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $league->id);
+    $condition = collect($this->actingAs($admin)->getJson('/api/admin/missions/conditions')->json('data'))->firstWhere('key', 'league_rank');
+    expect(collect($condition['params'])->pluck('type', 'name')->all())->toMatchArray(['competition' => 'choice', 'league_id' => 'league']);
+
+    $body = fn (int $leagueId, int $competition = 1) => [
+        'name' => 'Campeão Patrocinado', 'condition' => 'league_rank', 'rewards' => ['frame-reaper'], 'secret' => false,
+        'params' => ['max_rank' => 1, 'min_members' => 5, 'competition' => $competition, 'league_id' => $leagueId],
+    ];
+    $this->actingAs($admin)->postJson('/api/admin/missions', $body($global->id))->assertJsonValidationErrors(['params.league_id' => 'Liga não encontrada.']);
+    $this->actingAs($admin)->postJson('/api/admin/missions', $body($league->id, 7))->assertJsonValidationErrors('params.competition');
+    $this->actingAs($admin)->postJson('/api/admin/missions', $body($league->id))->assertCreated()
+        ->assertJsonPath('data.params_display.Liga', 'Liga Patrocinada')
+        ->assertJsonPath('data.params_display.Competição', 'Fantasy');
 });

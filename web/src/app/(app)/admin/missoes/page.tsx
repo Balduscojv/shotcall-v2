@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { serverApi } from "@/lib/server-api";
 import { formatDay } from "@/lib/labels";
-import type { Mission, MissionCondition } from "@/lib/types";
+import type { Mission } from "@/lib/types";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
 import { TitleBadge } from "@/components/cosmetics/CosmeticPreview";
 import { ActiveToggle } from "@/components/admin/ActiveToggle";
@@ -35,12 +35,7 @@ async function Missions() {
   const me = await requireUser();
   if (me.role !== "admin") notFound();
 
-  const [{ data: missions }, { data: conditions }] = await Promise.all([
-    serverApi<{ data: Mission[] }>("/admin/missions"),
-    serverApi<{ data: MissionCondition[] }>("/admin/missions/conditions"),
-  ]);
-  const paramLabel = (condition: string, name: string) =>
-    conditions.find((c) => c.key === condition)?.params.find((p) => p.name === name)?.label ?? name;
+  const { data: missions } = await serverApi<{ data: Mission[] }>("/admin/missions");
 
   if (missions.length === 0) {
     return <EmptyState title="NENHUMA MISSÃO">Crie a primeira: escolha a condição e os prêmios que ela libera.</EmptyState>;
@@ -59,9 +54,9 @@ async function Missions() {
           </div>
 
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-            {Object.entries(m.params).map(([name, value]) => (
-              <div key={name} className="contents">
-                <dt className="text-subtle">{paramLabel(m.condition, name)}</dt>
+            {Object.entries(m.params_display).map(([label, value]) => (
+              <div key={label} className="contents">
+                <dt className="text-subtle">{label}</dt>
                 <dd className="font-extrabold">{value}</dd>
               </div>
             ))}

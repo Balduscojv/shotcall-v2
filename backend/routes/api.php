@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Missões: condição do catálogo + parâmetros + recompensas.
         Route::get('missions/conditions', [MissionController::class, 'conditions']);
+        Route::get('missions/leagues', [MissionController::class, 'leagues']);
         Route::get('missions', [MissionController::class, 'index']);
         Route::post('missions', [MissionController::class, 'store']);
         Route::get('missions/{mission}', [MissionController::class, 'show'])->whereNumber('mission');
