@@ -8,6 +8,7 @@ use App\Models\PlayerPrice;
 use App\Models\PlayerRoundScore;
 use App\Models\Round;
 use App\Notifications\RoundSettled;
+use App\Services\Missions\MissionRunner;
 use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Support\Facades\DB;
 
@@ -28,6 +29,7 @@ class RoundSettlement
         private ShotCallBoost $boost,
         private GameScoring $scoring,
         private ShotCallService $shotCalls,
+        private MissionRunner $missions,
     ) {}
 
     /** Rodadas travadas que já acabaram e não têm jogo pendente. */
@@ -110,6 +112,7 @@ class RoundSettlement
         }
 
         $this->notifyTeams($round);
+        $this->missions->roundSettled($round);
     }
 
     /** Cada dono de time recebe quantos pontos fez. Fora da transação: só avisa o que já gravou. */

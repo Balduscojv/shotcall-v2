@@ -3,7 +3,7 @@
 use App\Models\Friendship;
 use App\Models\League;
 use App\Models\User;
-use App\Services\Missions\SplashBrothersMission;
+use App\Services\Missions\MissionRunner;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Str;
 
@@ -86,7 +86,7 @@ it('libera o Splash Brothers para os dois amigos quando finalizam a 3ª liga jun
     leagueWith([$this->ana, $this->bia]);
     $third = leagueWith([$this->ana, $this->bia], finished: false);
 
-    $mission = app(SplashBrothersMission::class);
+    $mission = app(MissionRunner::class);
     expect($mission->leagueFinished($third))->toBe(0)->and(splashOwners())->toBe([]);
 
     $third->update(['finished_at' => now()]);
@@ -100,13 +100,13 @@ it('não libera para quem não é amigo, nem conta liga global ou não finalizad
     leagueWith([$this->ana, $this->bia]);
     leagueWith([$this->ana, $this->bia]);
     $third = leagueWith([$this->ana, $this->bia]);
-    expect(app(SplashBrothersMission::class)->leagueFinished($third))->toBe(0);   // não são amigos
+    expect(app(MissionRunner::class)->leagueFinished($third))->toBe(0);   // não são amigos
 
     befriend($this->ana, $this->bia);
     $third->members()->detach($this->bia->id);
     leagueWith([$this->ana, $this->bia], global: true);
     leagueWith([$this->ana, $this->bia], finished: false);
-    expect(app(SplashBrothersMission::class)->checkPair($this->ana, $this->bia))->toBe(0)
+    expect(app(MissionRunner::class)->friendshipAccepted($this->ana, $this->bia))->toBe(0)
         ->and(splashOwners())->toBe([]);
 });
 

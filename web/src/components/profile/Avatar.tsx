@@ -1,4 +1,4 @@
-import { frameClass } from "@/lib/cosmetics";
+import { frameLook } from "@/lib/cosmetics";
 import type { User } from "@/lib/types";
 
 const sizes = {
@@ -12,6 +12,7 @@ type AvatarUser = Pick<User, "name" | "avatar_url"> & { equipped?: Pick<NonNulla
 
 /** Foto de perfil com a moldura-prêmio em uso. Sem foto, mostra as iniciais. */
 export function Avatar({ user, size = "md" }: { user: AvatarUser; size?: keyof typeof sizes }) {
+  const frame = frameLook(user.equipped?.frame);
   const initials = user.name
     .split(" ")
     .filter(Boolean)
@@ -21,7 +22,8 @@ export function Avatar({ user, size = "md" }: { user: AvatarUser; size?: keyof t
 
   return (
     <span
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface font-display text-chalk ${frameClass(user.equipped?.frame)} ${sizes[size]}`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface font-display text-chalk ${frame.className} ${sizes[size]}`}
+      style={frame.style}
     >
       {user.avatar_url ? (
         // eslint-disable-next-line @next/next/no-img-element -- imagem do usuário servida pelo Laravel

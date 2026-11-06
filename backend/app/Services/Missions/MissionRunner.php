@@ -2,53 +2,74 @@
 
 namespace App\Services\Missions;
 
-use App\Models\Cosmetic;
 use App\Models\Game;
+use App\Models\League;
+use App\Models\Mission;
+use App\Models\Round;
 use App\Models\User;
 use App\Services\Cosmetics\AwardService;
 
 /**
- * Avalia as missões secretas de um jogo que terminou e libera os prêmios de quem cumpriu.
- * Pode rodar de novo no mesmo jogo sem problema: quem já tem o prêmio não muda nada.
- *
- * Quem chama: a leitura dos jogos da NBA, quando o jogo vira FINAL (ainda por portar do
- * repositório antigo), e o comando missions:run para rodar na mão.
+ * Avalia as missões (cadastradas pela moderação) quando algo acontece no app e libera as
+ * recompensas de quem cumpriu. Só entram missões ativas, dentro do período, e prêmios ativos.
+ * Pode rodar de novo sem problema: quem já tem o prêmio não muda nada.
  */
 class MissionRunner
 {
-    /** @var list<class-string<Mission>> */
-    private const MISSIONS = [
-        ClutchMission::class,
-    ];
+    public const GAME_FINISHED = 'game_finished';
 
-    public function __construct(private AwardService $awards) {}
+    public const ROUND_SETTLED = 'round_settled';
+
+    public const LEAGUE_FINISHED = 'league_finished';
+
+    public const FRIENDSHIP_ACCEPTED = 'friendship_accepted';
+
+    public function __construct(private AwardService $awards, private ConditionCatalog $catalog) {}
 
     /** @return int quantos prêmios foram liberados */
     public function gameFinished(Game $game): int
     {
-        if ($game->status !== 'FINAL') {
-            return 0;
-        }
+        return $game->status === 'FINAL' ? $this->run(self::GAME_FINISHED, $game) : 0;
+    }
+
+    public function roundSettled(Round $round): int
+    {
+        return $this->run(self::ROUND_SETTLED, $round);
+    }
+
+    public function leagueFinished(League $league): int
+    {
+        return ! $league->is_global && $league->finished_at !== null ? $this->run(self::LEAGUE_FINISHED, $league) : 0;
+    }
+
+    public function friendshipAccepted(User $a, User $b): int
+    {
+        return $this->run(self::FRIENDSHIP_ACCEPTED, [$a, $b]);
+    }
+
+    private function run(string $event, mixed $subject): int
+    {
+        $missions = Mission::running()
+            ->whereIn('condition', $this->catalog->keysFor($event))
+            ->with(['rewards' => fn ($q) => $q->active()])
+            ->get();
 
         $granted = 0;
-        foreach (self::MISSIONS as $class) {
-            $mission = app($class);
-            $cosmetics = Cosmetic::triggeredBy($mission->trigger())->get();
-            if ($cosmetics->isEmpty()) {
+        foreach ($missions as $mission) {
+            if ($mission->rewards->isEmpty()) {
                 continue;
             }
 
-            $userIds = $mission->achieversOf($game);
-            if ($userIds->isEmpty()) {
+            $winners = $this->catalog->find($mission->condition)->achievers($mission, $event, $subject);
+            if ($winners === []) {
                 continue;
             }
 
-            $reason = $mission->reason($game);
-            User::whereIn('id', $userIds)->each(function (User $user) use ($cosmetics, $reason, &$granted) {
-                foreach ($cosmetics as $cosmetic) {
-                    $granted += (int) $this->awards->grant($user, $cosmetic, $reason);
+            foreach (User::whereIn('id', array_keys($winners))->get() as $user) {
+                foreach ($mission->rewards as $cosmetic) {
+                    $granted += (int) $this->awards->grant($user, $cosmetic, $winners[$user->id]);
                 }
-            });
+            }
         }
 
         return $granted;

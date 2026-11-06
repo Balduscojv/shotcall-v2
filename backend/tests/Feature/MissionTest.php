@@ -1,9 +1,13 @@
 <?php
 
+use App\Models\Cosmetic;
 use App\Models\FantasyTeam;
 use App\Models\Game;
 use App\Models\GameAction;
+use App\Models\GameShotCall;
+use App\Models\Mission;
 use App\Models\Player;
+use App\Models\PlayerGameStat;
 use App\Models\Round;
 use App\Models\Season;
 use App\Models\Team;
@@ -143,4 +147,65 @@ it('missão bloqueada aparece como ??? com a dica, e se revela depois de liberad
 
     $this->putJson('/api/me/cosmetics/title', ['key' => 'mission-clutch'])->assertOk()
         ->assertJsonPath('data.equipped.title.name', 'Clutch');
+});
+
+// Condições novas do catálogo (a moderação cria a missão; aqui direto no banco).
+
+function missionFor(string $condition, array $params): void
+{
+    $mission = Mission::create([
+        'key' => $condition, 'name' => 'Teste', 'condition' => $condition, 'params' => $params, 'secret' => false,
+    ]);
+    $mission->rewards()->attach(Cosmetic::where('key', 'welcome-banner-street')->value('id'));
+}
+
+function streetOwners(): array
+{
+    return User::whereHas('cosmetics', fn ($q) => $q->where('key', 'welcome-banner-street'))->orderBy('handle')->pluck('handle')->all();
+}
+
+it('cestinha pontuou muito: vale para quem escalou o jogador como cestinha', function () {
+    missionFor('cestinha_points', ['min_points' => 40]);
+    PlayerGameStat::create(['game_id' => '0022600001', 'player_id' => 10, 'team_id' => $this->bos->id, 'pts' => 41]);
+    PlayerGameStat::create(['game_id' => '0022600001', 'player_id' => 20, 'team_id' => $this->lal->id, 'pts' => 39]);
+
+    app(MissionRunner::class)->gameFinished($this->game);
+
+    expect(streetOwners())->toBe(['ana'])
+        ->and($this->ana->cosmetics()->first()->pivot->unlock_reason)->toBe('Missão Teste · LAL @ BOS');
+});
+
+it('pontos do time na rodada', function () {
+    missionFor('round_points', ['min_points' => 200]);
+    FantasyTeam::where('user_id', $this->ana->id)->update(['points' => 200]);
+    FantasyTeam::where('user_id', $this->bia->id)->update(['points' => 199.5]);
+
+    app(MissionRunner::class)->roundSettled($this->round);
+
+    expect(streetOwners())->toBe(['ana'])
+        ->and($this->ana->cosmetics()->first()->pivot->unlock_reason)->toBe("Missão Teste · Rodada {$this->round->number}");
+});
+
+it('palpites perfeitos na rodada', function () {
+    missionFor('perfect_shot_calls', ['min_games' => 2]);
+    foreach (['0022600002', '0022600003'] as $id) {
+        Game::create([
+            'id' => $id, 'season_id' => $this->game->season_id, 'round_id' => $this->round->id, 'phase' => 'REGULAR',
+            'home_team_id' => $this->bos->id, 'away_team_id' => $this->lal->id, 'start_time' => now(), 'status' => 'FINAL',
+            'home_score' => 100, 'away_score' => 90,
+        ]);
+    }
+    $call = fn (User $u, string $game, int $correct) => GameShotCall::create([
+        'user_id' => $u->id, 'game_id' => $game, 'winner_team_id' => $this->bos->id, 'margin_band' => 'M6_10',
+        'mvp_player_id' => 10, 'status' => 'SETTLED', 'correct' => $correct, 'points' => 0,
+    ]);
+    $call($this->ana, '0022600001', 3);
+    $call($this->ana, '0022600002', 3);
+    $call($this->bia, '0022600001', 3);
+    $call($this->bia, '0022600002', 2);
+    $call($this->bia, '0022600003', 3);
+
+    app(MissionRunner::class)->roundSettled($this->round);
+
+    expect(streetOwners())->toBe(['ana', 'bia']);
 });

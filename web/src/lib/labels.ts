@@ -82,7 +82,7 @@ export const sourceLabel: Record<string, string> = {
 };
 
 export const triggerLabel = (trigger: string | null | undefined) =>
-  !trigger ? "Só pela moderação" : trigger === "SIGNUP" ? "Ao criar a conta" : trigger;
+  !trigger ? "Missão ou moderação" : trigger === "SIGNUP" ? "Ao criar a conta" : trigger;
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", timeZone: "America/Sao_Paulo" });
 const monthYearFmt = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "America/Sao_Paulo" });

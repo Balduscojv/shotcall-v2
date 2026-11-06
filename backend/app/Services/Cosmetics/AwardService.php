@@ -48,7 +48,7 @@ class AwardService
         $reason = self::TRIGGER_REASONS[$trigger] ?? 'Conquista';
 
         // Por id: com vários do mesmo tipo, o primeiro cadastrado é o que vai para uso.
-        $granted = Cosmetic::triggeredBy($trigger)->orderBy('id')->get()
+        $granted = Cosmetic::triggeredBy($trigger)->active()->orderBy('id')->get()
             ->filter(fn (Cosmetic $cosmetic) => $this->grant($user, $cosmetic, $reason))
             ->values();
 
@@ -110,8 +110,9 @@ class AwardService
     }
 
     /**
-     * Missões secretas que o usuário ainda não liberou. Aparecem como "???" com a dica vaga;
-     * nome, visual e chave ficam escondidos. Admin já usa tudo, então não tem nada bloqueado.
+     * Recompensas de missões secretas (em andamento) que o usuário ainda não liberou. Aparecem
+     * como "???" com a dica da missão; nome, visual e chave ficam escondidos. Admin já usa tudo,
+     * então não tem nada bloqueado.
      *
      * @return \Illuminate\Support\Collection<int, array{id: int, slot: string, rarity: string, hint: ?string}>
      */
@@ -121,11 +122,15 @@ class AwardService
             return collect();
         }
 
-        return Cosmetic::where('secret', true)
+        return Cosmetic::active()
+            ->whereHas('missions', fn ($q) => $q->running()->where('secret', true))
             ->whereDoesntHave('owners', fn ($q) => $q->whereKey($user->id))
+            ->with(['missions' => fn ($q) => $q->running()->where('secret', true)->orderBy('id')])
             ->showcaseOrder()
             ->get()
-            ->map(fn (Cosmetic $c) => ['id' => $c->id, 'slot' => $c->slot->value, 'rarity' => $c->rarity, 'hint' => $c->hint]);
+            ->map(fn (Cosmetic $c) => [
+                'id' => $c->id, 'slot' => $c->slot->value, 'rarity' => $c->rarity, 'hint' => $c->missions->first()?->hint,
+            ]);
     }
 
     /**
@@ -139,7 +144,7 @@ class AwardService
         $owned = $user->cosmetics()->get()->keyBy('id');
         $equipped = $user->equippedIds();
 
-        return Cosmetic::showcaseOrder()->get()->map(function (Cosmetic $cosmetic) use ($owned, $equipped) {
+        return Cosmetic::showcaseOrder()->with('missions')->get()->map(function (Cosmetic $cosmetic) use ($owned, $equipped) {
             $mine = $owned->get($cosmetic->id);
             $cosmetic->setRelation('pivot', $mine?->pivot);
             $cosmetic->setAttribute('owned', $mine !== null);

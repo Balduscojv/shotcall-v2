@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\CosmeticCatalogController;
+use App\Http\Controllers\Admin\MissionController;
 use App\Http\Controllers\Admin\UserCosmeticController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
@@ -71,5 +73,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('users/{user:handle}/cosmetics', [UserCosmeticController::class, 'index']);
         Route::post('users/{user:handle}/cosmetics', [UserCosmeticController::class, 'store']);
         Route::delete('users/{user:handle}/cosmetics/{cosmetic:key}', [UserCosmeticController::class, 'destroy']);
+
+        // Catálogo de prêmios. Editar é POST porque pode vir com imagem (multipart).
+        Route::get('cosmetics', [CosmeticCatalogController::class, 'index']);
+        Route::post('cosmetics', [CosmeticCatalogController::class, 'store']);
+        Route::post('cosmetics/{cosmetic:key}', [CosmeticCatalogController::class, 'update']);
+        Route::delete('cosmetics/{cosmetic:key}', [CosmeticCatalogController::class, 'destroy']);
+
+        // Missões: condição do catálogo + parâmetros + recompensas.
+        Route::get('missions/conditions', [MissionController::class, 'conditions']);
+        Route::get('missions', [MissionController::class, 'index']);
+        Route::post('missions', [MissionController::class, 'store']);
+        Route::get('missions/{mission}', [MissionController::class, 'show'])->whereNumber('mission');
+        Route::put('missions/{mission}', [MissionController::class, 'update'])->whereNumber('mission');
+        Route::patch('missions/{mission}/active', [MissionController::class, 'toggle'])->whereNumber('mission');
+        Route::delete('missions/{mission}', [MissionController::class, 'destroy'])->whereNumber('mission');
     });
 });

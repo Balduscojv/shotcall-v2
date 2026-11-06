@@ -2,15 +2,16 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Cosmetic;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 
 /**
  * Prêmio do catálogo. Quando vem de uma coleção de usuário, traz também se ele tem
  * (owned), quando e por que liberou, e se está em uso.
  *
- * @mixin \App\Models\Cosmetic
+ * @mixin Cosmetic
  */
 class CosmeticResource extends JsonResource
 {
@@ -27,9 +28,12 @@ class CosmeticResource extends JsonResource
             'rarity' => $this->rarity,
             'source' => $this->source,
             'trigger' => $this->when($request->user()?->isAdmin(), $this->trigger),
-            // Missão secreta. Quem chega a ver o item é porque já liberou (ou é admin).
-            'secret' => (bool) $this->secret,
+            // Recompensa de missão secreta. Quem chega a ver o item é porque já liberou (ou é admin).
+            'secret' => $this->isSecret(),
             'asset_key' => $this->asset_key,
+            'color' => $this->color,
+            'image_url' => $this->image_path,
+            'active' => $this->when($request->user()?->isAdmin(), fn () => (bool) $this->active),
             'package_key' => $this->package_key,
             'owned' => $this->when($this->hasAttribute('owned'), fn () => (bool) $this->owned),
             'equipped' => $this->when($this->hasAttribute('is_equipped'), fn () => (bool) $this->is_equipped),

@@ -6,7 +6,7 @@ use App\Models\Friendship;
 use App\Models\User;
 use App\Notifications\FriendRequestAccepted;
 use App\Notifications\FriendRequestReceived;
-use App\Services\Missions\SplashBrothersMission;
+use App\Services\Missions\MissionRunner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\DatabaseNotification;
@@ -25,7 +25,7 @@ class FriendshipService
 
     public const NONE = 'NONE';
 
-    public function __construct(private SplashBrothersMission $splashBrothers) {}
+    public function __construct(private MissionRunner $missions) {}
 
     public function status(User $viewer, User $user): string
     {
@@ -108,7 +108,7 @@ class FriendshipService
         $requester->notify(new FriendRequestAccepted($user));
 
         // O par pode já ter finalizado ligas juntos antes de virar amigo.
-        $this->splashBrothers->checkPair($user, $requester);
+        $this->missions->friendshipAccepted($user, $requester);
 
         return $link;
     }

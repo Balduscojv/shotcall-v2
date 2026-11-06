@@ -4,19 +4,18 @@ namespace Database\Seeders;
 
 use App\Enums\CosmeticSlot;
 use App\Models\Cosmetic;
-use App\Services\Missions\ClutchMission;
-use App\Services\Missions\SplashBrothersMission;
 use Illuminate\Database\Seeder;
 
 /**
  * Catálogo de prêmios. Três tipos: banner de fundo, moldura da foto e título do @.
- * `trigger` = o que libera (SIGNUP = cadastro); sem trigger, só a moderação libera.
+ * `trigger` SIGNUP = liberado no cadastro. Os outros saem pelas missões (MissionSeeder e a
+ * moderação) ou direto pela moderação.
  * `asset_key` = qual visual o front desenha (web/src/lib/cosmetics.ts).
  *
  * Com mais de um do mesmo tipo, o primeiro da lista é o que já vem em uso no cadastro
  * (o jogador troca na aba Prêmios).
  *
- * Comuns: os de boas-vindas, liberados no cadastro. Raros ou acima: missões secretas.
+ * Comuns: os de boas-vindas. Raros ou acima: recompensas de missão.
  * O catálogo antigo (por acerto de palpite, semana, temporada, liga) está no histórico do Git.
  */
 class CosmeticSeeder extends Seeder
@@ -62,49 +61,38 @@ class CosmeticSeeder extends Seeder
             ],
         ];
 
-        // Missões secretas (app/Services/Missions): raras ou acima, liberadas por uma façanha
-        // (num jogo, ou com amigos nas ligas). Antes disso o jogador só vê "???" e a dica.
-        $missions = [
+        // Recompensas das missões iniciais (MissionSeeder). Quem cumpre é a missão; o prêmio
+        // só diz como é.
+        $rewards = [
             [
                 'key' => 'mission-clutch', 'slot' => CosmeticSlot::Title, 'name' => 'Clutch', 'rarity' => 'RARE',
                 'description' => 'Seu cestinha fez a última cesta do jogo, e foi ela que decidiu.',
-                'trigger' => ClutchMission::TRIGGER,
-                'hint' => 'Confie no seu cestinha quando o relógio apertar.',
             ],
             [
                 'key' => 'mission-splash-brothers', 'slot' => CosmeticSlot::Title, 'name' => 'Splash Brothers', 'rarity' => 'RARE',
                 'description' => 'Amigos que finalizaram 3 ligas juntos. Dupla que não se separa.',
-                'trigger' => SplashBrothersMission::TRIGGER,
-                'hint' => 'Forme amizades consistentes.',
             ],
         ];
 
+        // firstOrCreate: depois de criado, o prêmio é da moderação (nome, cor, ativo...);
+        // rodar o seeder de novo não desfaz o que ela mudou.
         foreach ($items as $item) {
-            Cosmetic::updateOrCreate(['key' => $item['key']], $item + [
+            Cosmetic::firstOrCreate(['key' => $item['key']], $item + [
                 'rarity' => 'COMMON',
                 'source' => 'SIGNUP',
                 'trigger' => Cosmetic::TRIGGER_SIGNUP,
-                'secret' => false,
-                'hint' => null,
                 'asset_key' => $item['key'],
                 'season_id' => null,
             ]);
         }
 
-        foreach ($missions as $item) {
-            Cosmetic::updateOrCreate(['key' => $item['key']], $item + [
+        foreach ($rewards as $item) {
+            Cosmetic::firstOrCreate(['key' => $item['key']], $item + [
                 'source' => 'MISSION',
-                'secret' => true,
+                'trigger' => null,
                 'asset_key' => $item['key'],
                 'season_id' => null,
             ]);
         }
-
-        $items = [...$items, ...$missions];
-
-        // Tira do catálogo o que saiu da lista e ninguém tem (ex.: o catálogo antigo).
-        Cosmetic::whereNotIn('key', array_column($items, 'key'))
-            ->whereDoesntHave('owners')
-            ->delete();
     }
 }

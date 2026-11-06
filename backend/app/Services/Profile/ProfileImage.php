@@ -15,6 +15,7 @@ use Illuminate\Validation\ValidationException;
 class ProfileImage
 {
     public const AVATAR = 'avatar';
+
     public const BANNER = 'banner';
 
     /** Tamanho final. Banner na proporção do cabeçalho web (1200 × 280), em 2x. */
@@ -24,6 +25,20 @@ class ProfileImage
     ];
 
     public function store(User $user, string $kind, UploadedFile $file): User
+    {
+        $bytes = $this->webp($file, $kind);
+
+        $path = "{$kind}s/{$user->id}-".Str::random(10).'.webp';
+        Storage::disk('public')->put($path, $bytes);
+
+        $this->forget($user, $kind);
+        $user->forceFill([$this->column($kind) => '/storage/'.$path])->save();
+
+        return $user;
+    }
+
+    /** Endireita, recorta no tamanho do tipo (avatar/banner) e devolve os bytes em WebP. */
+    public function webp(UploadedFile $file, string $kind): string
     {
         [$width, $height] = self::SIZES[$kind];
 
@@ -40,13 +55,7 @@ class ProfileImage
         imagedestroy($source);
         imagedestroy($output);
 
-        $path = "{$kind}s/{$user->id}-".Str::random(10).'.webp';
-        Storage::disk('public')->put($path, $bytes);
-
-        $this->forget($user, $kind);
-        $user->forceFill([$this->column($kind) => '/storage/'.$path])->save();
-
-        return $user;
+        return $bytes;
     }
 
     public function remove(User $user, string $kind): User

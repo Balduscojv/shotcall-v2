@@ -3,10 +3,11 @@
 namespace App\Http\Resources;
 
 use App\Models\Cosmetic;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-/** @mixin \App\Models\User */
+/** @mixin User */
 class UserResource extends JsonResource
 {
     /** @return array<string, mixed> */
@@ -33,9 +34,12 @@ class UserResource extends JsonResource
         ];
     }
 
-    /** @return array{key: string, name: string, asset_key: string|null, rarity: string} */
+    /** @return array{key: string, name: string, asset_key: string|null, rarity: string, color: string|null, image_url: string|null} */
     private static function cosmetic(Cosmetic $cosmetic): array
     {
-        return ['key' => $cosmetic->key, 'name' => $cosmetic->name, 'asset_key' => $cosmetic->asset_key, 'rarity' => $cosmetic->rarity];
+        return [
+            'key' => $cosmetic->key, 'name' => $cosmetic->name, 'asset_key' => $cosmetic->asset_key, 'rarity' => $cosmetic->rarity,
+            'color' => $cosmetic->color, 'image_url' => $cosmetic->image_path,
+        ];
     }
 }

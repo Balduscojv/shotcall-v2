@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call([TeamSeeder::class, SeasonSeeder::class, CosmeticSeeder::class]);
+        $this->call([TeamSeeder::class, SeasonSeeder::class, CosmeticSeeder::class, MissionSeeder::class]);
 
         // Conta de sistema, dona da Liga Global em que todo usuário entra.
         $system = User::firstOrCreate(['email' => 'sistema@shotcall.app'], ['name' => 'ShotCall', 'handle' => 'shotcall']);

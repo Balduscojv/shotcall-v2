@@ -18,7 +18,10 @@ export type User = {
 export type CosmeticSlot = "BANNER" | "FRAME" | "TITLE";
 
 /** Resumo de um prêmio em uso, o suficiente para desenhar. */
-export type EquippedItem = { key: string; name: string; asset_key: string | null; rarity: Rarity };
+/** Visual de um prêmio: arte do front (asset_key) ou, nos criados pela moderação, imagem/cor. */
+export type CosmeticLook = { asset_key: string | null; rarity: Rarity; color?: string | null; image_url?: string | null };
+
+export type EquippedItem = CosmeticLook & { key: string; name: string };
 
 export type Equipped = { banner: EquippedItem | null; frame: EquippedItem | null; title: EquippedItem | null };
 
@@ -34,7 +37,12 @@ export type Cosmetic = {
   trigger?: string | null;
   asset_key: string | null;
   package_key: string | null;
-  /** Missão secreta. Só aparece assim depois de liberada (ou para admin). */
+  /** Visual dos prêmios criados pela moderação. */
+  color?: string | null;
+  image_url?: string | null;
+  /** Só para admin: desativado não é mais liberado (quem tem continua usando). */
+  active?: boolean;
+  /** Recompensa de missão secreta. Só aparece assim depois de liberada (ou para admin). */
   secret?: boolean;
   /** Em coleções de um usuário: se ele tem e se está usando. */
   owned?: boolean;
@@ -304,4 +312,30 @@ export type AppNotification = {
   actor: { name: string; handle: string; avatar_url: string | null } | null;
   read_at: string | null;
   created_at: string;
+};
+
+/** Prêmio na moderação do catálogo (GET /admin/cosmetics). */
+export type AdminCosmetic = Cosmetic & { active: boolean; owners_count: number; missions: { id: number; name: string }[] };
+
+/** Parâmetro de uma condição de missão (sempre inteiro). */
+export type ConditionParam = { name: string; label: string; help?: string; min: number; max: number; default: number };
+
+/** Tipo de condição do catálogo (GET /admin/missions/conditions). */
+export type MissionCondition = { key: string; label: string; description: string; params: ConditionParam[] };
+
+/** Missão na moderação (MissionResource). */
+export type Mission = {
+  id: number;
+  key: string;
+  name: string;
+  description: string | null;
+  condition: string;
+  condition_label: string;
+  params: Record<string, number>;
+  secret: boolean;
+  hint: string | null;
+  active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  rewards: (CosmeticLook & { key: string; name: string; slot: CosmeticSlot; active: boolean })[];
 };
