@@ -18,7 +18,7 @@ return new class extends Migration
             $t->string('privacy', 7)->default('PRIVATE'); // PRIVATE, PUBLIC
             $t->string('invite_code', 6)->unique();
             $t->jsonb('competitions'); // ["FANTASY", "SHOTCALL"]
-            $t->unsignedSmallInteger('max_members')->default(20);
+            $t->unsignedInteger('max_members')->default(20);
             $t->boolean('is_global')->default(false);
             $t->timestamps();
         });
