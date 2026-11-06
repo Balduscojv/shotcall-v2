@@ -13,7 +13,9 @@ export const SESSION_COOKIE = "shotcall_session";
  */
 export async function serverApi<T>(path: string): Promise<T> {
   const jar = await cookies();
-  if (!jar.has(SESSION_COOKIE)) redirect("/entrar");
+  // Sem sessão e sem o cookie de "Manter conectado" (remember_web_*), nem tenta.
+  const remembered = jar.getAll().some((c) => c.name.startsWith("remember_web_"));
+  if (!jar.has(SESSION_COOKIE) && !remembered) redirect("/entrar");
 
   const res = await fetch(`${API_URL}/api${path}`, {
     headers: {

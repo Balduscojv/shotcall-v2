@@ -34,7 +34,9 @@ return [
 
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
 
-    'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
+    // ShotCall: a sessão morre quando o navegador fecha. Quem marca "Manter conectado" volta
+    // logado pelo cookie de lembrar (remember_web_*), não por esta sessão.
+    'expire_on_close' => (bool) env('SESSION_EXPIRE_ON_CLOSE', true),
 
     /*
     |--------------------------------------------------------------------------

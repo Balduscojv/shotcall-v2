@@ -16,7 +16,9 @@ use App\Http\Controllers\ShotCallController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
-    Route::middleware(['guest', 'throttle:10,1'])->group(function () {
+    // Sem 'guest': entrar ou criar conta com uma sessão antiga aberta troca a sessão,
+    // em vez de travar a tela de login com "você já está logado".
+    Route::middleware('throttle:10,1')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
     });

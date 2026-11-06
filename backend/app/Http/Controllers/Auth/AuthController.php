@@ -31,6 +31,7 @@ class AuthController extends Controller
             return $user->load(['equippedBanner', 'equippedFrame', 'equippedTitle']);
         });
 
+        $this->endCurrentSession($request);
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
 
@@ -40,6 +41,10 @@ class AuthController extends Controller
     public function login(LoginRequest $request): UserResource
     {
         $credentials = $request->safe()->only('email', 'password');
+
+        // Sessão antiga ainda aberta (ex.: outra conta, ou o "manter conectado" de antes):
+        // sai dela primeiro, para não sobrar o cookie de lembrar de quem estava logado.
+        $this->endCurrentSession($request);
 
         if (! Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
             throw ValidationException::withMessages(['email' => 'E-mail ou senha não conferem.']);
@@ -52,11 +57,19 @@ class AuthController extends Controller
 
     public function logout(Request $request): Response
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $this->endCurrentSession($request);
 
         return response()->noContent();
+    }
+
+    /** Desloga quem estiver na sessão (e apaga o cookie de lembrar) e começa uma sessão limpa. */
+    private function endCurrentSession(Request $request): void
+    {
+        if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+        }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     }
 
     public function me(Request $request): JsonResponse
