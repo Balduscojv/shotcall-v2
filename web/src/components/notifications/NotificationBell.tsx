@@ -48,8 +48,16 @@ export function NotificationBell() {
     };
   }, [pathname]);
 
+  return <BellLink count={count} active={pathname === "/notificacoes"} />;
+}
+
+/** Sininho sem contagem: fallback do <Suspense> enquanto a URL e a contagem não chegam. */
+export function NotificationBellStatic() {
+  return <BellLink count={0} active={false} />;
+}
+
+function BellLink({ count, active }: { count: number; active: boolean }) {
   const label = count === 0 ? "Notificações" : `Notificações: ${count} não ${count === 1 ? "lida" : "lidas"}`;
-  const active = pathname === "/notificacoes";
 
   return (
     <Link

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { AdminNavLink } from "@/components/admin/AdminNavLink";
 import { Logo } from "@/components/ui/Logo";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { NotificationBell, NotificationBellStatic } from "@/components/notifications/NotificationBell";
 import { ProfileNavLink, ProfileNavLinkStatic } from "@/components/profile/ProfileNavLink";
 
 const navLink = "inline-flex h-11 items-center px-2 font-bold whitespace-nowrap text-chalk no-underline hover:text-lime sm:px-3";
@@ -17,7 +17,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 sm:px-6">
           <Logo href="/perfil" />
           <div className="flex items-center gap-1 sm:order-last">
-            <NotificationBell />
+            <Suspense fallback={<NotificationBellStatic />}>
+              <NotificationBell />
+            </Suspense>
             <LogoutButton />
           </div>
           <nav aria-label="Principal" className="-mx-2 flex w-full items-center justify-between gap-0.5 sm:mx-0 sm:ml-auto sm:w-auto sm:justify-end sm:gap-3">
