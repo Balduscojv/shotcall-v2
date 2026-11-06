@@ -27,6 +27,8 @@ class CosmeticResource extends JsonResource
             'rarity' => $this->rarity,
             'source' => $this->source,
             'trigger' => $this->when($request->user()?->isAdmin(), $this->trigger),
+            // Missão secreta. Quem chega a ver o item é porque já liberou (ou é admin).
+            'secret' => (bool) $this->secret,
             'asset_key' => $this->asset_key,
             'package_key' => $this->package_key,
             'owned' => $this->when($this->hasAttribute('owned'), fn () => (bool) $this->owned),

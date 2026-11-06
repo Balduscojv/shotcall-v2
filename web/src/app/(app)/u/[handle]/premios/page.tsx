@@ -3,8 +3,9 @@ import { requireUser } from "@/lib/auth";
 import { serverApi } from "@/lib/server-api";
 import { slotHint, slotLabel, slots } from "@/lib/labels";
 import { getProfile } from "@/lib/profile";
-import type { Cosmetic } from "@/lib/types";
+import type { Cosmetic, LockedMission } from "@/lib/types";
 import { CosmeticCard } from "@/components/cosmetics/CosmeticCard";
+import { LockedMissionCard } from "@/components/cosmetics/LockedMissionCard";
 import { EquipButton } from "@/components/cosmetics/EquipButton";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
 
@@ -58,7 +59,10 @@ async function Awards({ params }: Pick<PageProps<"/u/[handle]/premios">, "params
     );
   }
 
-  const [me, { data: collection }] = await Promise.all([requireUser(), serverApi<{ data: Cosmetic[] }>("/me/cosmetics")]);
+  const [me, { data: collection, meta }] = await Promise.all([
+    requireUser(),
+    serverApi<{ data: Cosmetic[]; meta: { locked: LockedMission[] } }>("/me/cosmetics"),
+  ]);
   const isAdmin = me.role === "admin";
   const initials = initialsOf(profile.name);
 
@@ -69,12 +73,13 @@ async function Awards({ params }: Pick<PageProps<"/u/[handle]/premios">, "params
         <p className="text-muted">
           {isAdmin
             ? "Como admin, você pode usar qualquer prêmio do catálogo."
-            : "Escolha um de cada tipo para usar no seu perfil. Novos prêmios chegam jogando."}
+            : "Escolha um de cada tipo para usar no seu perfil. Os raros saem de missões secretas: siga a dica."}
         </p>
       </div>
 
       {slots.map((slot) => {
         const items = collection.filter((c) => c.slot === slot);
+        const locked = meta.locked.filter((m) => m.slot === slot);
         const inUse = items.find((c) => c.equipped);
 
         return (
@@ -86,7 +91,7 @@ async function Awards({ params }: Pick<PageProps<"/u/[handle]/premios">, "params
               </div>
               {inUse && <EquipButton slot={slot} cosmeticKey={null} label={`Não usar ${slotLabel[slot].toLowerCase()}`} />}
             </div>
-            {items.length === 0 ? (
+            {items.length === 0 && locked.length === 0 ? (
               <EmptyState title="NADA AQUI AINDA">Continue jogando para liberar prêmios deste tipo.</EmptyState>
             ) : (
               <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
@@ -99,6 +104,9 @@ async function Awards({ params }: Pick<PageProps<"/u/[handle]/premios">, "params
                   >
                     {!item.equipped && <EquipButton slot={slot} cosmeticKey={item.key} label="Usar" />}
                   </CosmeticCard>
+                ))}
+                {locked.map((mission) => (
+                  <LockedMissionCard key={mission.id} mission={mission} />
                 ))}
               </ul>
             )}

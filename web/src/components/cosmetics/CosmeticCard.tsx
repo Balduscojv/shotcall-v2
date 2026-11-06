@@ -28,7 +28,11 @@ export function CosmeticCard({
         <span className={`rounded-md border-2 border-ink px-2 py-0.5 font-display text-[11px] ${rarityStyle[cosmetic.rarity]}`}>
           {rarityLabel[cosmetic.rarity].toUpperCase()}
         </span>
-        {cosmetic.equipped && <span className="text-xs font-extrabold text-lime">EM USO</span>}
+        {cosmetic.equipped ? (
+          <span className="text-xs font-extrabold text-lime">EM USO</span>
+        ) : (
+          cosmetic.secret && <span className="text-xs font-extrabold text-subtle">MISSÃO SECRETA</span>
+        )}
       </div>
       <div className="flex flex-col gap-0.5">
         <span className="text-sm font-bold text-subtle">{slotLabel[cosmetic.slot]}</span>

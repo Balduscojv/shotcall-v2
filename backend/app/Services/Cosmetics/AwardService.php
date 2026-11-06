@@ -102,6 +102,25 @@ class AwardService
     }
 
     /**
+     * Missões secretas que o usuário ainda não liberou. Aparecem como "???" com a dica vaga;
+     * nome, visual e chave ficam escondidos. Admin já usa tudo, então não tem nada bloqueado.
+     *
+     * @return \Illuminate\Support\Collection<int, array{id: int, slot: string, rarity: string, hint: ?string}>
+     */
+    public function lockedSecretsFor(User $user): \Illuminate\Support\Collection
+    {
+        if ($user->isAdmin()) {
+            return collect();
+        }
+
+        return Cosmetic::where('secret', true)
+            ->whereDoesntHave('owners', fn ($q) => $q->whereKey($user->id))
+            ->showcaseOrder()
+            ->get()
+            ->map(fn (Cosmetic $c) => ['id' => $c->id, 'slot' => $c->slot->value, 'rarity' => $c->rarity, 'hint' => $c->hint]);
+    }
+
+    /**
      * Catálogo inteiro do ponto de vista de um usuário: cada item com `owned`, `is_equipped`
      * e, se ele tem, o pivot com data e motivo.
      *

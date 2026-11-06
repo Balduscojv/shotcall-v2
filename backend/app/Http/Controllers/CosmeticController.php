@@ -16,10 +16,16 @@ class CosmeticController extends Controller
 {
     public function __construct(private AwardService $awards) {}
 
-    /** Prêmios que posso equipar (admin vê o catálogo inteiro). */
+    /**
+     * Prêmios que posso equipar (admin vê o catálogo inteiro). Em meta.locked vão as missões
+     * secretas que ainda não liberei, só com tipo, raridade e dica.
+     */
     public function index(Request $request): AnonymousResourceCollection
     {
-        return CosmeticResource::collection($this->awards->usableBy($request->user()));
+        $user = $request->user();
+
+        return CosmeticResource::collection($this->awards->usableBy($user))
+            ->additional(['meta' => ['locked' => $this->awards->lockedSecretsFor($user)]]);
     }
 
     /** PUT /me/cosmetics/{slot} { key: string|null } — equipa ou tira o prêmio daquele tipo. */

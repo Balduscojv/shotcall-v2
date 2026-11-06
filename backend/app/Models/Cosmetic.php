@@ -8,8 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * Prêmio (banner, moldura ou título). `trigger` diz o que libera: SIGNUP, GAME:GOLD, ...;
- * sem trigger, só a moderação libera.
+ * Prêmio (banner, moldura ou título). `trigger` diz o que libera: SIGNUP, MISSION:CLUTCH, ...;
+ * sem trigger, só a moderação libera. `secret` = missão secreta: antes de liberar, o jogador
+ * só vê "???" e a dica (`hint`).
  */
 class Cosmetic extends Model
 {
@@ -19,7 +20,7 @@ class Cosmetic extends Model
 
     protected function casts(): array
     {
-        return ['anchors' => 'array', 'slot' => CosmeticSlot::class];
+        return ['anchors' => 'array', 'slot' => CosmeticSlot::class, 'secret' => 'boolean'];
     }
 
     public function owners(): BelongsToMany

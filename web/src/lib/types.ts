@@ -34,12 +34,17 @@ export type Cosmetic = {
   trigger?: string | null;
   asset_key: string | null;
   package_key: string | null;
+  /** Missão secreta. Só aparece assim depois de liberada (ou para admin). */
+  secret?: boolean;
   /** Em coleções de um usuário: se ele tem e se está usando. */
   owned?: boolean;
   equipped?: boolean;
   unlocked_at: string | null;
   reason: string | null;
 };
+
+/** Missão secreta ainda não liberada: só tipo, raridade e a dica vaga (meta.locked de /me/cosmetics). */
+export type LockedMission = { id: number; slot: CosmeticSlot; rarity: Rarity; hint: string | null };
 
 /** Relação de quem vê com o dono do perfil. */
 export type Friendship = "SELF" | "FRIENDS" | "SENT" | "RECEIVED" | "NONE";

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\CosmeticSlot;
 use App\Models\Cosmetic;
+use App\Services\Missions\ClutchMission;
 use Illuminate\Database\Seeder;
 
 /**
@@ -14,8 +15,8 @@ use Illuminate\Database\Seeder;
  * Com mais de um do mesmo tipo, o primeiro da lista é o que já vem em uso no cadastro
  * (o jogador troca na aba Prêmios).
  *
- * Por enquanto só os genéricos de boas-vindas. Os exclusivos entram depois; o catálogo
- * antigo (por acerto de palpite, semana, temporada, liga) está no histórico do Git.
+ * Comuns: os de boas-vindas, liberados no cadastro. Raros ou acima: missões secretas.
+ * O catálogo antigo (por acerto de palpite, semana, temporada, liga) está no histórico do Git.
  */
 class CosmeticSeeder extends Seeder
 {
@@ -60,15 +61,39 @@ class CosmeticSeeder extends Seeder
             ],
         ];
 
+        // Missões secretas (app/Services/Missions): raras ou acima, liberadas por uma façanha
+        // num jogo. Antes disso o jogador só vê "???" e a dica.
+        $missions = [
+            [
+                'key' => 'mission-clutch', 'slot' => CosmeticSlot::Title, 'name' => 'Clutch', 'rarity' => 'RARE',
+                'description' => 'Seu cestinha fez a última cesta do jogo, e foi ela que decidiu.',
+                'trigger' => ClutchMission::TRIGGER,
+                'hint' => 'Confie no seu cestinha quando o relógio apertar.',
+            ],
+        ];
+
         foreach ($items as $item) {
             Cosmetic::updateOrCreate(['key' => $item['key']], $item + [
                 'rarity' => 'COMMON',
                 'source' => 'SIGNUP',
                 'trigger' => Cosmetic::TRIGGER_SIGNUP,
+                'secret' => false,
+                'hint' => null,
                 'asset_key' => $item['key'],
                 'season_id' => null,
             ]);
         }
+
+        foreach ($missions as $item) {
+            Cosmetic::updateOrCreate(['key' => $item['key']], $item + [
+                'source' => 'MISSION',
+                'secret' => true,
+                'asset_key' => $item['key'],
+                'season_id' => null,
+            ]);
+        }
+
+        $items = [...$items, ...$missions];
 
         // Tira do catálogo o que saiu da lista e ninguém tem (ex.: o catálogo antigo).
         Cosmetic::whereNotIn('key', array_column($items, 'key'))
