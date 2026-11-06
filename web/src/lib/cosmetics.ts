@@ -21,6 +21,8 @@ const frames: Record<string, string> = {
   "welcome-frame": "frame-ball",
   "welcome-frame-parquet": "frame-parquet",
   "welcome-frame-paint": "frame-paint",
+  // Capuz do Ceifador: o aro é escuro com filete dourado; capuz e foice vêm de FrameArt.tsx.
+  "frame-reaper": "frame-reaper",
 };
 
 /** Etiqueta do título ao lado do @. */

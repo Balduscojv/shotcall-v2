@@ -1,5 +1,6 @@
 import { bannerLook, frameLook, titleLook } from "@/lib/cosmetics";
 import type { Cosmetic, CosmeticLook, CosmeticSlot } from "@/lib/types";
+import { FrameArt, hasFrameArt } from "./FrameArt";
 
 /** Título-prêmio ao lado do @. */
 export function TitleBadge({ title, className = "" }: { title: CosmeticLook & { name: string }; className?: string }) {
@@ -27,13 +28,18 @@ export function CosmeticPreview({ cosmetic, initials = "SC" }: { cosmetic: Previ
 
   if (cosmetic.slot === "FRAME") {
     const look = frameLook(cosmetic);
+    // Moldura com arte (capuz, foice...): círculo menor, para a arte caber dentro do card.
+    const art = hasFrameArt(cosmetic.asset_key);
     return (
       <div className="flex aspect-[1200/280] w-full items-center justify-center rounded-xl border-2 border-ink bg-ground" aria-hidden="true">
         <span
-          className={`inline-flex size-12 items-center justify-center rounded-full border-4 bg-surface font-display text-base text-chalk ${look.className}`}
+          className={`relative inline-flex items-center justify-center rounded-full bg-surface font-display text-chalk ${
+            art ? "size-9 border-[3px] text-xs" : "size-12 border-4 text-base"
+          } ${look.className}`}
           style={look.style}
         >
           {initials}
+          {art && <FrameArt assetKey={cosmetic.asset_key} />}
         </span>
       </div>
     );

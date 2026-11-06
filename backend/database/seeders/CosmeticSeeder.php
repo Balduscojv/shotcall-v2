@@ -94,5 +94,24 @@ class CosmeticSeeder extends Seeder
                 'season_id' => null,
             ]);
         }
+
+        // Exclusivos com arte própria (web/src/components/cosmetics/FrameArt.tsx). Sem gatilho:
+        // saem pela moderação ou por uma missão que os tenha como recompensa.
+        $exclusives = [
+            [
+                'key' => 'frame-reaper', 'slot' => CosmeticSlot::Frame, 'name' => 'Capuz do Ceifador',
+                'description' => 'Capuz negro e foice afiada: quem usa ceifa os palpites alheios.',
+            ],
+        ];
+
+        foreach ($exclusives as $item) {
+            Cosmetic::firstOrCreate(['key' => $item['key']], $item + [
+                'rarity' => 'LEGENDARY',
+                'source' => 'SPECIAL',
+                'trigger' => null,
+                'asset_key' => $item['key'],
+                'season_id' => null,
+            ]);
+        }
     }
 }

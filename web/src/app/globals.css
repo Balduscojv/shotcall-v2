@@ -220,6 +220,16 @@
     inset 0 0 0 1.5px var(--color-ink);
 }
 
+/* Capuz do Ceifador (Exclusivo): aro de tecido escuro com filete dourado por dentro. O capuz
+   e a foice são o SVG de components/cosmetics/FrameArt.tsx, por cima, nos avatares maiores. */
+@utility frame-reaper {
+  border-color: #1d1826;
+  box-shadow:
+    0 0 0 1.5px var(--color-ink),
+    0 0 6px 1px rgba(139, 92, 246, 0.55),
+    inset 0 0 0 1.5px var(--color-exclusive);
+}
+
 /* Garrafão: pintura azul da quadra com a linha branca por fora (e o contorno preto depois dela)
    e as marcações do lance livre, quatro tracinhos brancos de cada lado. */
 @utility frame-paint {
