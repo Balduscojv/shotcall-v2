@@ -18,5 +18,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/perfil/:path*", "/u/:path*", "/admin/:path*"],
+  // /ligas: quem abre um link de convite sem estar logado volta para o convite depois de entrar.
+  matcher: ["/perfil/:path*", "/u/:path*", "/admin/:path*", "/ligas/:path*"],
 };

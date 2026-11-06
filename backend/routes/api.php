@@ -9,6 +9,7 @@ use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\FantasyController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\LeagueController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileMediaController;
@@ -53,6 +54,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('awards', 'awards');
         Route::get('leagues', 'leagues');
         Route::get('friends', 'friends');
+    });
+
+    // Ligas: as minhas, busca, convite e a página de cada uma (ranking e membros)
+    Route::controller(LeagueController::class)->prefix('leagues')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store')->middleware('throttle:10,1');
+        Route::get('search', 'search')->middleware('throttle:60,1');
+        Route::get('invite/{code}', 'invite')->middleware('throttle:30,1');
+        Route::post('join', 'joinByCode')->middleware('throttle:10,1');
+        Route::get('{league}', 'show');
+        Route::patch('{league}', 'update');
+        Route::delete('{league}', 'destroy');
+        Route::post('{league}/join', 'join')->middleware('throttle:10,1');
+        Route::post('{league}/leave', 'leave');
+        Route::post('{league}/invite-code', 'regenerateCode')->middleware('throttle:10,1');
+        Route::get('{league}/standings', 'standings');
+        Route::get('{league}/members', 'members');
+        Route::patch('{league}/members/{user:handle}', 'changeRole')->withoutScopedBindings();
+        Route::delete('{league}/members/{user:handle}', 'removeMember')->withoutScopedBindings();
     });
 
     // Amizades

@@ -8,6 +8,7 @@ use App\Models\PlayerPrice;
 use App\Models\PlayerRoundScore;
 use App\Models\Round;
 use App\Notifications\RoundSettled;
+use App\Services\Leagues\LeagueRanking;
 use App\Services\Missions\MissionRunner;
 use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ class RoundSettlement
         private GameScoring $scoring,
         private ShotCallService $shotCalls,
         private MissionRunner $missions,
+        private LeagueRanking $standings,
     ) {}
 
     /** Rodadas travadas que já acabaram e não têm jogo pendente. */
@@ -111,6 +113,7 @@ class RoundSettlement
             $this->market->open($next);
         }
 
+        $this->standings->snapshot($round);
         $this->notifyTeams($round);
         $this->missions->roundSettled($round);
     }

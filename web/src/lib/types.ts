@@ -204,17 +204,74 @@ export type Paginated<T> = {
 
 export type Rarity = "COMMON" | "RARE" | "EPIC" | "LEGENDARY";
 
+export type Competition = "FANTASY" | "SHOTCALL";
+export type LeagueRole = "OWNER" | "ADMIN" | "MEMBER";
+export type LeaguePrivacy = "PUBLIC" | "PRIVATE";
+
 export type ProfileLeague = {
   slug: string;
   name: string;
   color: string;
   is_global: boolean;
-  privacy: "PUBLIC" | "PRIVATE";
-  competitions: ("FANTASY" | "SHOTCALL")[];
+  privacy: LeaguePrivacy;
+  competitions: Competition[];
   members_count: number;
   max_members: number;
-  role: "OWNER" | "ADMIN" | "MEMBER" | null;
+  role: LeagueRole | null;
   rank: number | null;
+};
+
+/** Liga vista por mim (app/Http/Resources/LeagueResource.php). */
+export type League = {
+  slug: string;
+  name: string;
+  color: string;
+  description: string | null;
+  privacy: LeaguePrivacy;
+  competitions: Competition[];
+  is_global: boolean;
+  members_count: number;
+  max_members: number;
+  role: LeagueRole | null;
+  /** Só para membros. */
+  invite_code?: string;
+  can: { update: boolean; moderate: boolean; change_roles: boolean; join: boolean; leave: boolean };
+};
+
+/** Liga pública na busca (GET /leagues/search). */
+export type PublicLeague = Pick<League, "slug" | "name" | "color" | "description" | "competitions" | "members_count" | "max_members"> & {
+  is_member: boolean;
+};
+
+/** Prévia do convite (GET /leagues/invite/{code}). */
+export type LeagueInvite = Omit<PublicLeague, "is_member"> & { privacy: LeaguePrivacy; owner: User; is_member: boolean };
+
+export type LeagueMember = User & { league_role: LeagueRole };
+
+export type StandingsBoard = "fantasy" | "patrimony" | "shotcall";
+export type StandingsPeriod = "round" | "month" | "season";
+
+export type StandingRow = {
+  rank: number;
+  /** Posições que subiu (negativo: desceu) desde a rodada anterior. */
+  move: number | null;
+  /** Nulo no patrimônio de quem ainda não tem time. */
+  score: number | null;
+  is_me: boolean;
+  user: User;
+};
+
+export type Standings = {
+  data: StandingRow[];
+  meta: {
+    boards: StandingsBoard[];
+    board: StandingsBoard;
+    period: StandingsPeriod;
+    round: { number: number; status: FantasyRound["status"]; month: string } | null;
+    rounds: number[];
+    me: StandingRow | null;
+    total: number;
+  };
 };
 
 export type FriendRequests = { received: User[]; sent: User[] };

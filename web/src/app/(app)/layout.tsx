@@ -32,6 +32,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link href="/time" className={navLink}>
               Escale seu time
             </Link>
+            <Link href="/ligas" className={navLink}>
+              Ligas
+            </Link>
             <Suspense fallback={<ProfileNavLinkStatic />}>
               <ProfileNavLink />
             </Suspense>

@@ -1,0 +1,263 @@
+<?php
+
+use App\Models\FantasyTeam;
+use App\Models\Game;
+use App\Models\GameShotCall;
+use App\Models\League;
+use App\Models\LeagueStanding;
+use App\Models\Round;
+use App\Models\Team;
+use App\Models\User;
+use App\Models\UserAccuracy;
+use App\Services\Leagues\JoinGlobalLeague;
+use App\Services\Leagues\LeagueRanking;
+use App\Services\Leagues\LeagueService;
+use Database\Seeders\DatabaseSeeder;
+use Illuminate\Support\Carbon;
+
+// Sexta, 6/nov: a rodada 3 (2 a 8/nov) está rolando; a 1 e a 2 (outubro) já foram apuradas.
+beforeEach(function () {
+    Carbon::setTestNow(Carbon::parse('2026-11-06 12:00', 'America/New_York'));
+    $this->seed(DatabaseSeeder::class);
+    $this->withHeader('Origin', 'http://localhost:3000');
+
+    $this->ana = User::factory()->create(['handle' => 'ana', 'name' => 'Ana']);
+    $this->bia = User::factory()->create(['handle' => 'bia', 'name' => 'Bia']);
+    $this->caio = User::factory()->create(['handle' => 'caio', 'name' => 'Caio']);
+    foreach ([$this->ana, $this->bia, $this->caio] as $user) {
+        app(JoinGlobalLeague::class)($user);
+    }
+    $this->round = fn (int $n) => Round::where('number', $n)->first();
+});
+
+afterEach(fn () => Carbon::setTestNow());
+
+function createLeague(User $owner, array $data = []): League
+{
+    $slug = test()->actingAs($owner)->postJson('/api/leagues', $data + [
+        'name' => 'Liga do Rachão', 'color' => '#8B5CF6', 'privacy' => 'PRIVATE', 'competitions' => ['FANTASY', 'SHOTCALL'],
+    ])->assertCreated()->json('data.slug');
+
+    return League::where('slug', $slug)->first();
+}
+
+/** Membro que pontua desde a rodada 1 (as ligas de teste "existem" desde o começo da temporada). */
+function addMember(League $league, User $user, string $role = 'MEMBER', int $from = 1): void
+{
+    $league->members()->syncWithoutDetaching([$user->id => ['role' => $role, 'joined_round_number' => $from]]);
+}
+
+function team(User $user, int $round, float $points, float $patrimony = 100): void
+{
+    FantasyTeam::create([
+        'user_id' => $user->id, 'round_id' => Round::where('number', $round)->value('id'),
+        'balance' => 0, 'patrimony' => $patrimony, 'points' => $points,
+    ]);
+}
+
+it('cria a liga com o dono, código de convite e pontuando a partir da próxima rodada', function () {
+    $league = createLeague($this->ana);
+
+    expect($league->owner_id)->toBe($this->ana->id)
+        ->and($league->invite_code)->toMatch('/^[A-HJ-NP-Z2-9]{6}$/')
+        ->and($league->max_members)->toBe(20)
+        ->and($league->members()->first()->pivot->role)->toBe('OWNER')
+        // a rodada 3 já começou: conta a partir da 4
+        ->and($league->members()->first()->pivot->joined_round_number)->toBe(4);
+
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}")
+        ->assertJsonPath('data.role', 'OWNER')
+        ->assertJsonPath('data.invite_code', $league->invite_code)
+        ->assertJsonPath('data.can.update', true)
+        ->assertJsonPath('data.can.leave', false);
+});
+
+it('valida a criação', function (array $data, string $field) {
+    $this->actingAs($this->ana)->postJson('/api/leagues', $data + [
+        'name' => 'Liga', 'color' => '#8B5CF6', 'privacy' => 'PRIVATE', 'competitions' => ['FANTASY'],
+    ])->assertUnprocessable()->assertJsonValidationErrors($field);
+})->with([
+    'nome curto' => [['name' => 'ab'], 'name'],
+    'cor' => [['color' => 'roxo'], 'color'],
+    'sem competição' => [['competitions' => []], 'competitions'],
+    'competição inventada' => [['competitions' => ['XADREZ']], 'competitions.0'],
+]);
+
+it('entra pelo código, mas não em liga cheia', function () {
+    $league = createLeague($this->ana);
+
+    $this->actingAs($this->bia)->getJson("/api/leagues/invite/{$league->invite_code}")
+        ->assertJsonPath('data.name', 'Liga do Rachão')->assertJsonPath('data.is_member', false);
+    $this->actingAs($this->bia)->postJson('/api/leagues/join', ['code' => strtolower($league->invite_code)])
+        ->assertOk()->assertJsonPath('data.slug', $league->slug);
+    expect($league->hasMember($this->bia))->toBeTrue();
+
+    $this->actingAs($this->caio)->postJson('/api/leagues/join', ['code' => 'ZZZZZZ'])->assertJsonValidationErrors('code');
+
+    $league->update(['max_members' => 2]);
+    $this->actingAs($this->caio)->postJson('/api/leagues/join', ['code' => $league->invite_code])
+        ->assertJsonValidationErrors(['code' => 'Essa liga está cheia.']);
+});
+
+it('limita a 10 ligas por usuário, sem contar a global', function () {
+    foreach (range(1, 10) as $i) {
+        // Pelo serviço: pela API, a 11ª esbarraria no limite de 10 criações por minuto.
+        app(LeagueService::class)->create($this->ana, ['name' => "Liga {$i}", 'color' => '#8B5CF6', 'privacy' => 'PRIVATE', 'competitions' => ['FANTASY']]);
+    }
+    $this->actingAs($this->ana)->getJson('/api/leagues')->assertJsonCount(11, 'data')->assertJsonPath('meta.count', 10);
+
+    $this->actingAs($this->ana)->postJson('/api/leagues', [
+        'name' => 'Liga 11', 'color' => '#8B5CF6', 'privacy' => 'PRIVATE', 'competitions' => ['FANTASY'],
+    ])->assertJsonValidationErrors('league');
+});
+
+it('liga privada só aparece para membros; pública aparece na busca e aceita entrar direto', function () {
+    $private = createLeague($this->ana, ['name' => 'Segredo']);
+    $public = createLeague($this->ana, ['name' => 'Aberta do Bairro', 'privacy' => 'PUBLIC']);
+
+    $this->actingAs($this->bia)->getJson("/api/leagues/{$private->slug}")->assertNotFound();
+    $this->actingAs($this->bia)->getJson("/api/leagues/{$private->slug}/standings")->assertNotFound();
+    $this->actingAs($this->bia)->postJson("/api/leagues/{$private->slug}/join")->assertJsonValidationErrors('code');
+
+    $this->actingAs($this->bia)->getJson('/api/leagues/search?q=bairro')
+        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.slug', $public->slug);
+    $this->actingAs($this->bia)->getJson("/api/leagues/{$public->slug}")->assertJsonPath('data.can.join', true);
+    $this->actingAs($this->bia)->postJson("/api/leagues/{$public->slug}/join")->assertOk();
+    expect($public->hasMember($this->bia))->toBeTrue();
+});
+
+it('papéis: só o dono edita; admin remove membro comum, mas não o dono nem outro admin', function () {
+    $league = createLeague($this->ana);
+    addMember($league, $this->bia, 'ADMIN');
+    addMember($league, $this->caio);
+    $dani = User::factory()->create(['handle' => 'dani']);
+    addMember($league, $dani, 'ADMIN');
+
+    $edit = ['name' => 'Novo nome', 'color' => '#22D3EE', 'privacy' => 'PUBLIC', 'competitions' => ['SHOTCALL']];
+    $this->actingAs($this->bia)->patchJson("/api/leagues/{$league->slug}", $edit)->assertForbidden();
+    $this->actingAs($this->ana)->patchJson("/api/leagues/{$league->slug}", $edit)->assertJsonPath('data.name', 'Novo nome');
+
+    $this->actingAs($this->bia)->deleteJson("/api/leagues/{$league->slug}/members/ana")->assertForbidden();
+    $this->actingAs($this->bia)->deleteJson("/api/leagues/{$league->slug}/members/dani")->assertForbidden();
+    $this->actingAs($this->caio)->deleteJson("/api/leagues/{$league->slug}/members/bia")->assertForbidden();
+    $this->actingAs($this->bia)->deleteJson("/api/leagues/{$league->slug}/members/caio")->assertNoContent();
+    expect($league->hasMember($this->caio))->toBeFalse();
+
+    // Código novo: o antigo para de valer.
+    $old = $league->invite_code;
+    $this->actingAs($this->bia)->postJson("/api/leagues/{$league->slug}/invite-code")->assertOk();
+    $this->actingAs($this->caio)->postJson('/api/leagues/join', ['code' => $old])->assertJsonValidationErrors('code');
+});
+
+it('o dono transfere a liga e só então pode sair', function () {
+    $league = createLeague($this->ana);
+    addMember($league, $this->bia);
+
+    $this->actingAs($this->ana)->postJson("/api/leagues/{$league->slug}/leave")->assertJsonValidationErrors('league');
+    $this->actingAs($this->bia)->patchJson("/api/leagues/{$league->slug}/members/bia", ['role' => 'OWNER'])->assertForbidden();
+    $this->actingAs($this->ana)->patchJson("/api/leagues/{$league->slug}/members/bia", ['role' => 'OWNER'])->assertNoContent();
+
+    expect($league->fresh()->owner_id)->toBe($this->bia->id)
+        ->and($league->members()->whereKey($this->ana->id)->first()->pivot->role)->toBe('ADMIN');
+
+    $this->actingAs($this->ana)->postJson("/api/leagues/{$league->slug}/leave")->assertNoContent();
+    $this->actingAs($this->ana)->postJson('/api/leagues/global/leave')->assertJsonValidationErrors('league');
+});
+
+it('ranking de fantasy: soma do período, a partir da entrada, desempate pelo patrimônio', function () {
+    $league = createLeague($this->ana);
+    addMember($league, $this->ana, 'OWNER');
+    addMember($league, $this->bia);
+    addMember($league, $this->caio, 'MEMBER', from: 2);
+
+    team($this->ana, 1, 50, 100);
+    team($this->ana, 2, 30, 104);
+    team($this->bia, 1, 20, 100);
+    team($this->bia, 2, 60, 110);
+    team($this->caio, 1, 300, 100); // antes de entrar: não conta
+    team($this->caio, 2, 80, 101);
+
+    // Temporada até a rodada 2: os três com 80 → desempate pelo patrimônio da rodada 2 (110, 104, 101).
+    $res = $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=season&round=2")->assertOk();
+    expect(collect($res->json('data'))->map(fn ($r) => [$r['user']['handle'], $r['rank'], $r['score']])->all())
+        ->toBe([['bia', 1, 80], ['ana', 2, 80], ['caio', 3, 80]])
+        // Na rodada 1 (temporada até ela) era Ana 1ª, Bia 2ª, Caio 3º com 0.
+        ->and(collect($res->json('data'))->pluck('move', 'user.handle')->all())->toBe(['bia' => 1, 'ana' => -1, 'caio' => 0])
+        ->and($res->json('meta.me.rank'))->toBe(2)
+        ->and($res->json('meta.me.is_me'))->toBeTrue()
+        ->and($res->json('meta.boards'))->toBe(['fantasy', 'patrimony', 'shotcall']);
+
+    // Só a rodada 2.
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=fantasy&period=round&round=2")
+        ->assertJsonPath('data.0.user.handle', 'caio')->assertJsonPath('data.0.score', 80);
+
+    // Sem escolher, o fantasy mostra a última rodada apurada (a 2).
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?period=round")
+        ->assertJsonPath('meta.round.number', 2)->assertJsonPath('meta.round.month', 'outubro');
+});
+
+it('ranking de patrimônio e de shot calls, com desempate pela taxa de acerto', function () {
+    $league = createLeague($this->ana, ['competitions' => ['SHOTCALL']]);
+    addMember($league, $this->ana, 'OWNER');
+    addMember($league, $this->bia);
+
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=patrimony")
+        ->assertJsonPath('meta.boards', ['shotcall'])->assertJsonPath('meta.board', 'shotcall');
+
+    $r3 = ($this->round)(3);
+    $bos = Team::where('tricode', 'BOS')->first();
+    $lal = Team::where('tricode', 'LAL')->first();
+    $game = Game::create([
+        'id' => '401000777', 'season_id' => $r3->season_id, 'round_id' => $r3->id, 'phase' => 'REGULAR',
+        'home_team_id' => $bos->id, 'away_team_id' => $lal->id, 'start_time' => now()->subDay(), 'status' => 'FINAL',
+    ]);
+    foreach ([[$this->ana, 5], [$this->bia, 5]] as [$user, $points]) {
+        GameShotCall::create([
+            'user_id' => $user->id, 'game_id' => $game->id, 'winner_team_id' => $bos->id, 'margin_band' => 'M1_5',
+            'mvp_player_id' => 1, 'status' => 'SETTLED', 'points' => $points,
+        ]);
+    }
+    UserAccuracy::create(['user_id' => $this->ana->id, 'mode' => 'GAME', 'rate' => 0.5, 'counted' => 10]);
+    UserAccuracy::create(['user_id' => $this->bia->id, 'mode' => 'GAME', 'rate' => 0.7, 'counted' => 10]);
+
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$league->slug}/standings?board=shotcall&period=month")
+        ->assertJsonPath('meta.round.number', 3)
+        ->assertJsonPath('meta.round.month', 'novembro')
+        ->assertJsonPath('data.0.user.handle', 'bia')
+        ->assertJsonPath('data.1.rank', 2);
+
+    $fantasy = createLeague($this->bia, ['name' => 'Cartoleiros', 'competitions' => ['FANTASY']]);
+    addMember($fantasy, $this->ana);
+    team($this->ana, 3, 0, 120);
+    $this->actingAs($this->ana)->getJson("/api/leagues/{$fantasy->slug}/standings?board=patrimony")
+        ->assertJsonPath('meta.period', 'round')
+        ->assertJsonPath('data.0.user.handle', 'ana')->assertJsonPath('data.0.score', 120)
+        // sem time: fica no fim, sem número
+        ->assertJsonPath('data.1.score', null);
+});
+
+it('a apuração guarda a posição de cada liga, que aparece em minhas ligas', function () {
+    $league = createLeague($this->ana);
+    addMember($league, $this->ana, 'OWNER');
+    addMember($league, $this->bia);
+    team($this->ana, 2, 10);
+    team($this->bia, 2, 40);
+
+    app(LeagueRanking::class)->snapshot(($this->round)(2));
+
+    expect(LeagueStanding::where('league_id', $league->id)->where('user_id', $this->ana->id)->value('rank'))->toBe(2);
+    $this->actingAs($this->ana)->getJson('/api/leagues')
+        ->assertJsonPath('data.0.is_global', true)
+        ->assertJsonPath('data.1.slug', $league->slug)
+        ->assertJsonPath('data.1.rank', 2);
+});
+
+it('membros vêm com o papel, dono primeiro', function () {
+    $league = createLeague($this->ana);
+    addMember($league, $this->caio);
+    addMember($league, $this->bia, 'ADMIN');
+
+    $this->actingAs($this->caio)->getJson("/api/leagues/{$league->slug}/members")
+        ->assertJsonPath('data.0.handle', 'ana')->assertJsonPath('data.0.league_role', 'OWNER')
+        ->assertJsonPath('data.1.handle', 'bia')->assertJsonPath('data.2.league_role', 'MEMBER');
+});
