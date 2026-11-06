@@ -4,7 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\GameResource;
 use App\Models\Game;
+use App\Models\GameShotCall;
+use App\Models\Player;
 use App\Models\PlayerGameStat;
+use App\Models\User;
+use App\Models\UserAccuracy;
+use App\Services\ShotCalls\GameShotCallSettler;
+use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,6 +23,8 @@ use Illuminate\Support\Collection;
  */
 class GameController extends Controller
 {
+    public function __construct(private ShotCallService $shotCalls) {}
+
     private const TZ = 'America/New_York';
 
     /** GET /games?date=YYYY-MM-DD — jogos do dia, a semana em volta e o dia anterior/seguinte com jogo. */
@@ -27,6 +35,10 @@ class GameController extends Controller
         [$from, $to] = [$day->copy()->utc(), $day->copy()->endOfDay()->utc()];
 
         $games = Game::with(['home', 'away'])->whereBetween('start_time', [$from, $to])->orderBy('start_time')->orderBy('id')->get();
+        $mine = GameShotCall::where('user_id', $request->user()->id)->whereIn('game_id', $games->pluck('id'))->get()->keyBy('game_id');
+        $games->each(fn (Game $g) => $g->setAttribute('my_shot_call', isset($mine[$g->id])
+            ? ['status' => $mine[$g->id]->status, 'correct' => $mine[$g->id]->correct, 'points' => $mine[$g->id]->points]
+            : null));
 
         $weekStart = $day->copy()->startOfWeek(Carbon::MONDAY);
         $inWeek = Game::whereBetween('start_time', [$weekStart->copy()->utc(), $weekStart->copy()->addDays(6)->endOfDay()->utc()])
@@ -52,7 +64,7 @@ class GameController extends Controller
     }
 
     /** GET /games/{game} — placar, quartos, arremessos, líderes e box score por time. */
-    public function show(Game $game): JsonResponse
+    public function show(Request $request, Game $game): JsonResponse
     {
         $game->load(['home', 'away', 'periods' => fn ($q) => $q->orderBy('period')]);
         $stats = PlayerGameStat::with('player:id,full_name,position,jersey')->where('game_id', $game->id)->get();
@@ -83,7 +95,58 @@ class GameController extends Controller
                 'away' => $this->teamSheet($stats->where('team_id', $game->away_team_id)),
             ],
             'shots' => $shots,
+            'shot_call' => $this->shotCallBlock($request->user(), $game),
         ]]);
+    }
+
+    /**
+     * Meu palpite neste jogo: o que escolhi, e conforme o momento, os candidatos a MVP (antes do
+     * jogo), a parcial (ao vivo) ou o resultado (encerrado). Mais a minha taxa no modo jogo.
+     */
+    private function shotCallBlock(User $user, Game $game): array
+    {
+        $call = GameShotCall::with(['mvp:id,full_name,team_id'])->where('user_id', $user->id)->where('game_id', $game->id)->first();
+        $locked = $game->isLocked();
+        $scored = in_array($game->status, ['LIVE', 'FINAL'], true);
+        $result = $scored ? $this->shotCalls->result($game) : null;
+
+        $mine = null;
+        if ($call) {
+            $check = $result ? $this->shotCalls->check($call, $result) : null;
+            $mine = [
+                'status' => $call->status,
+                'winner_team_id' => (int) $call->winner_team_id,
+                'margin_band' => $call->margin_band,
+                'mvp' => $call->mvp ? ['id' => (int) $call->mvp->id, 'name' => $call->mvp->full_name, 'team_id' => (int) $call->mvp->team_id] : null,
+                // Encerrado e apurado: o resultado salvo. Ao vivo: "se acabasse agora".
+                'correct' => $call->status === 'SETTLED' ? (int) $call->correct : $check['correct'] ?? null,
+                'points' => $call->status === 'SETTLED' ? (int) $call->points : $check['points'] ?? null,
+                'markets' => $check['markets'] ?? null,
+                'provisional' => $call->status !== 'SETTLED',
+            ];
+        }
+
+        $mvpLeader = null;
+        if ($result && $result['mvp_player_ids']) {
+            $leader = Player::find($result['mvp_player_ids'][0]);
+            $mvpLeader = $leader ? ['id' => (int) $leader->id, 'name' => $leader->full_name, 'team_id' => (int) $leader->team_id, 'points' => $result['mvp_points']] : null;
+        }
+
+        $acc = UserAccuracy::where('user_id', $user->id)->where('mode', 'GAME')->first();
+
+        return [
+            'locked' => $locked,
+            'lock_at' => $game->start_time->toIso8601String(),
+            'mine' => $mine,
+            'candidates' => $locked ? [] : $this->shotCalls->candidates($game),
+            'margin' => $scored ? GameShotCallSettler::marginBand($game->home_score - $game->away_score) : null,
+            'mvp_leader' => $mvpLeader,
+            'accuracy' => [
+                'rate' => $acc?->rate === null ? null : (float) $acc->rate,
+                'counted' => (int) ($acc->counted ?? 0),
+                'tier' => $acc?->tier,
+            ],
+        ];
     }
 
     /** Totais, líderes e box score de um time. */

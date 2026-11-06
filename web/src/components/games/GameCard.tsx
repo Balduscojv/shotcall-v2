@@ -3,6 +3,22 @@ import { hasScore, leader, matchupGradient, statusLine } from "@/lib/games";
 import type { Game } from "@/lib/types";
 import { LiveBadge } from "./LiveBadge";
 
+/** Situação do meu palpite no rodapé do card. */
+function ShotCallTag({ game }: { game: Game }) {
+  const call = game.my_shot_call;
+  const base = "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-extrabold";
+  if (call?.status === "SETTLED") {
+    return (
+      <span className={`${base} bg-lime text-ink`}>
+        {call.correct}/3 · {call.points} pts
+      </span>
+    );
+  }
+  if (call) return <span className={`${base} bg-cyan text-ink`}>{game.status === "SCHEDULED" ? "Palpite cravado" : "Palpite travado"}</span>;
+  if (game.status === "SCHEDULED") return <span className={`${base} border-2 border-lime text-lime group-hover:bg-lime group-hover:text-ink`}>Palpitar →</span>;
+  return <span className="shrink-0 text-cyan group-hover:text-lime">{game.status === "LIVE" ? "Acompanhar" : "Ver jogo"} →</span>;
+}
+
 /** Card do calendário: faixa com as cores dos dois times, placar (ou horário) e onde passa. */
 export function GameCard({ game, nbaDay }: { game: Game; nbaDay: string }) {
   const live = game.status === "LIVE";
@@ -63,7 +79,7 @@ export function GameCard({ game, nbaDay }: { game: Game; nbaDay: string }) {
         </div>
         <div className="flex items-center justify-between gap-2 bg-panel px-4 py-2 text-xs font-bold text-muted">
           <span className="truncate">{where || "Local a confirmar"}</span>
-          <span className="shrink-0 text-cyan group-hover:text-lime">{live ? "Acompanhar" : scored ? "Ver jogo" : "Detalhes"} →</span>
+          <ShotCallTag game={game} />
         </div>
       </Link>
     </li>

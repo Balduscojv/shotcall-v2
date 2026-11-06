@@ -7,8 +7,9 @@ import { AutoRefresh } from "@/components/games/AutoRefresh";
 import { LiveBadge } from "@/components/games/LiveBadge";
 import { LeadersPanel } from "@/components/games/LeadersPanel";
 import { ShotChart } from "@/components/games/ShotChart";
+import { ShotCallPanel } from "@/components/shotcalls/ShotCallPanel";
 import { TeamDuel } from "@/components/games/TeamDuel";
-import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
+import { TabSkeleton } from "@/components/profile/TabStates";
 
 export const metadata = { title: "Jogo" };
 
@@ -91,9 +92,12 @@ async function GameView({ params }: Pick<PageProps<"/jogos/[id]">, "params">) {
       </section>
 
       {!scored ? (
-        <EmptyState title="O JOGO AINDA NÃO COMEÇOU">
-          Começa às {tipoff(game, day)} (horário de Brasília). Placar, arremessos e estatísticas aparecem aqui assim que a bola subir.
-        </EmptyState>
+        <div className="mx-auto flex w-full max-w-xl flex-col gap-4">
+          <p className="text-center text-sm text-muted">
+            A bola sobe às {tipoff(game, day)} (Brasília). Placar, arremessos e estatísticas aparecem aqui quando o jogo começar.
+          </p>
+          <ShotCallPanel game={game} />
+        </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <div className="flex min-w-0 flex-col gap-6">
@@ -101,6 +105,7 @@ async function GameView({ params }: Pick<PageProps<"/jogos/[id]">, "params">) {
             <Quarters game={game} />
           </div>
           <aside className="flex min-w-0 flex-col gap-4" aria-label="Destaques">
+            <ShotCallPanel game={game} />
             <TeamDuel game={game} />
             <LeadersPanel game={game} />
           </aside>

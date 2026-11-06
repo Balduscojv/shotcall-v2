@@ -9,6 +9,7 @@ use App\Models\GameAction;
 use App\Models\GamePeriod;
 use App\Models\Player;
 use App\Models\PlayerGameStat;
+use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -25,6 +26,7 @@ class GameSync
         $box = $this->nba->boxScore($game->id);
         $actions = $this->nba->playByPlay($game->id, (int) $game->last_action_number);
         $wasFinal = $game->status === 'FINAL';
+        $wasScheduled = $game->status === 'SCHEDULED';
 
         DB::transaction(function () use ($game, $box, $actions) {
             $game->update([
@@ -60,6 +62,11 @@ class GameSync
                 GameAction::insertOrIgnore(array_map(fn ($a) => ['game_id' => $game->id] + $a, $actions));
             }
         });
+
+        // A bola subiu: palpites abertos travam.
+        if ($wasScheduled && $game->status !== 'SCHEDULED') {
+            app(ShotCallService::class)->lock($game);
+        }
 
         if (! $wasFinal && $game->status === 'FINAL') {
             GameFinished::dispatch($game);

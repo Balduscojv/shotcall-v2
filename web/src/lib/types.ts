@@ -71,6 +71,8 @@ export type Game = {
   arena: string | null;
   national_tv: string | null;
   round: number | null;
+  /** Só na lista do calendário: o resumo do meu palpite neste jogo. */
+  my_shot_call?: { status: ShotCallStatus; correct: number | null; points: number | null } | null;
   home: Team;
   away: Team;
 };
@@ -118,10 +120,48 @@ export type TeamSheet = {
 /** Arremesso de quadra, com a posição em % da quadra (comprimento × largura). */
 export type Shot = { n: number; period: number; clock: string; team_id: number; player_id: number | null; three: boolean; made: boolean; x: number; y: number };
 
+export type ShotCallStatus = "OPEN" | "LOCKED" | "SETTLED" | "VOID";
+export type MarginBand = "M1_5" | "M6_10" | "M11_15" | "M16_PLUS";
+export type ShotCallMarket = "winner" | "margin" | "mvp";
+
+/** Jogador que pode ser MVP do jogo, com a média de pontos fantasy na temporada. */
+export type MvpCandidate = {
+  id: number;
+  name: string;
+  team_id: number;
+  position: string | null;
+  jersey: string | null;
+  average: number | null;
+  games: number;
+};
+
+/** Meu shot call no jogo (GameController::shotCallBlock). */
+export type GameShotCall = {
+  locked: boolean;
+  lock_at: string;
+  mine: {
+    status: ShotCallStatus;
+    winner_team_id: number;
+    margin_band: MarginBand;
+    mvp: { id: number; name: string; team_id: number } | null;
+    /** Ao vivo: "se acabasse agora" (provisional). Encerrado: o resultado apurado. */
+    correct: number | null;
+    points: number | null;
+    markets: Record<ShotCallMarket, boolean> | null;
+    provisional: boolean;
+  } | null;
+  candidates: MvpCandidate[];
+  /** Faixa da diferença atual no placar. */
+  margin: MarginBand | null;
+  mvp_leader: { id: number; name: string; team_id: number; points: number } | null;
+  accuracy: { rate: number | null; counted: number; tier: Tier | null };
+};
+
 export type GameDetail = Game & {
   periods: { period: number; home_points: number; away_points: number }[];
   teams: { home: TeamSheet; away: TeamSheet };
   shots: Shot[];
+  shot_call: GameShotCall;
 };
 
 /** Relação de quem vê com o dono do perfil. */

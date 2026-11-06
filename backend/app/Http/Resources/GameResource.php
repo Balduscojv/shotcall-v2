@@ -29,6 +29,8 @@ class GameResource extends JsonResource
             'arena' => $this->arena,
             'national_tv' => $this->national_tv,
             'round' => $this->round_id,
+            // Só na lista do calendário: o resumo do meu palpite neste jogo.
+            'my_shot_call' => $this->when($this->resource->hasAttribute('my_shot_call'), fn () => $this->resource->getAttribute('my_shot_call')),
             'home' => self::team($this->home),
             'away' => self::team($this->away),
         ];
