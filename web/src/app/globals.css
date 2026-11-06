@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/* Identidade do canvas ShotCall: quadra de rua à noite, contorno preto grosso e sombra chapada. */
+@theme {
+  --color-ink: #0a0a0a;
+  --color-ground: #0d0e12;
+  --color-fence: #121319;
+  --color-panel: #17191f;
+  --color-surface: #22252e;
+  --color-chalk: #f6f4ee;
+  --color-muted: #c9ccd6;
+  --color-subtle: #9aa0b2;
+
+  --color-orange: #ff5a1f;
+  --color-pink: #ff3d7f;
+  --color-purple: #8b5cf6;
+  --color-lime: #c6ff3d;
+  --color-cyan: #22d3ee;
+  --color-yellow: #ffc83d;
+  --color-danger: #ff6b6b;
+
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
+  --font-display: var(--font-bungee), Impact, sans-serif;
+  --font-score: var(--font-anton), Impact, sans-serif;
+  --font-marker: var(--font-marker), cursive;
+
+  --shadow-hard-sm: 3px 3px 0 var(--color-ink);
+  --shadow-hard: 5px 5px 0 var(--color-ink);
+  --shadow-hard-lg: 8px 8px 0 var(--color-ink);
+
+  --animate-pulse-dot: pulse-dot 1.2s ease-in-out infinite;
+  --animate-bounce-ball: bounce-ball 1.5s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  --animate-wobble: wobble 2.6s ease-in-out infinite;
+  --animate-marquee: marquee 18s linear infinite;
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  @keyframes bounce-ball {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    45% { transform: translateY(-60px) scale(0.96, 1.04); }
+    55% { transform: translateY(-60px); }
+    92% { transform: translateY(0) scale(1.14, 0.84); }
+  }
+  @keyframes wobble {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(3deg); }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--color-ground);
+    color: var(--color-chalk);
+    font-family: var(--font-sans);
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+}
+
+@utility concrete {
+  background-color: var(--color-ground);
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1.2px),
+    radial-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1.2px);
+  background-size: 7px 7px, 13px 13px;
+  background-position: 0 0, 3px 5px;
+}
+
+@utility fence {
+  background-color: var(--color-fence);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(246, 244, 238, 0.06) 0 2px, transparent 2px 24px),
+    repeating-linear-gradient(-45deg, rgba(246, 244, 238, 0.06) 0 2px, transparent 2px 24px);
+}
+
+@utility bg-hype {
+  background-image: linear-gradient(100deg, var(--color-orange), var(--color-pink) 60%, var(--color-purple));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
