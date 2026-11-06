@@ -535,3 +535,41 @@ it('moderação: busca a liga, valida o vínculo e mostra o nome na lista', func
         ->assertJsonPath('data.params_display.Liga', 'Liga Patrocinada')
         ->assertJsonPath('data.params_display.Competição', 'Fantasy');
 });
+
+it('contador de títulos: missão nova premia na hora quem já foi primeiro colocado 3x', function () use ($reaper) {
+    $admin = User::factory()->admin()->create();
+    $season = Season::first();
+    $trophy = fn (User $user, int $rank, int $members = 5, string $competition = 'FANTASY') => LeagueTrophy::create([
+        'league_id' => null, 'user_id' => $user->id, 'season_id' => $season->id, 'competition' => $competition,
+        'rank' => $rank, 'members_count' => $members, 'league_name' => 'Liga '.uniqid(), 'league_color' => '#C6FF3D', 'score' => 100,
+    ]);
+    // Ana: 3 títulos (um de shot calls). Bia: 2 títulos e um 2º lugar. Caio: 3 títulos, mas um em liga pequena.
+    $trophy($this->ana, 1);
+    $trophy($this->ana, 1);
+    $trophy($this->ana, 1, 8, 'SHOTCALL');
+    $trophy($this->bia, 1);
+    $trophy($this->bia, 1);
+    $trophy($this->bia, 2);
+    $caio = User::factory()->create();
+    $trophy($caio, 1);
+    $trophy($caio, 1);
+    $trophy($caio, 1, 3);
+
+    $body = [
+        'name' => 'Primeiro colocado 3x', 'condition' => 'league_wins', 'rewards' => ['frame-reaper'], 'secret' => false,
+        'params' => ['min_wins' => 3, 'max_rank' => 1, 'min_members' => 5, 'competition' => 0],
+    ];
+    $id = $this->actingAs($admin)->postJson('/api/admin/missions', $body)->assertCreated()
+        ->assertJsonPath('meta.granted', 1)->json('data.id');
+
+    expect($reaper($this->ana))->toBe('3 títulos de liga')
+        ->and($reaper($this->bia))->toBeNull()
+        ->and($reaper($caio))->toBeNull();
+
+    // Salvar de novo não repete o prêmio; desligada não premia; ao religar, pega quem chegou lá.
+    $this->actingAs($admin)->putJson("/api/admin/missions/{$id}", $body)->assertJsonPath('meta.granted', 0);
+    $this->actingAs($admin)->patchJson("/api/admin/missions/{$id}/active", ['active' => false])->assertJsonPath('meta.granted', 0);
+    $trophy($this->bia, 1);
+    $this->actingAs($admin)->patchJson("/api/admin/missions/{$id}/active", ['active' => true])->assertJsonPath('meta.granted', 1);
+    expect($reaper($this->bia))->toBe('3 títulos de liga');
+});

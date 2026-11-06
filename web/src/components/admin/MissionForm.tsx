@@ -98,8 +98,12 @@ export function MissionForm({
     };
 
     try {
-      await api(editing ? `/admin/missions/${mission.id}` : "/admin/missions", { method: editing ? "PUT" : "POST", body });
-      router.push("/admin/missoes");
+      const { meta } = await api<{ meta: { granted: number } }>(editing ? `/admin/missions/${mission.id}` : "/admin/missions", {
+        method: editing ? "PUT" : "POST",
+        body,
+      });
+      // Contador de títulos e afins premiam na hora quem já cumpria: a lista avisa quantos.
+      router.push(meta.granted > 0 ? `/admin/missoes?liberados=${meta.granted}` : "/admin/missoes");
       router.refresh();
     } catch (e) {
       if (e instanceof ApiError) {

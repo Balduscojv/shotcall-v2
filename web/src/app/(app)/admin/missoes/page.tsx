@@ -12,7 +12,7 @@ import { buttonClass } from "@/components/ui/button";
 
 export const metadata = { title: "Moderação de missões" };
 
-export default function AdminMissionsPage() {
+export default function AdminMissionsPage({ searchParams }: PageProps<"/admin/missoes">) {
   return (
     <div className="flex flex-col gap-6 px-4 pt-6 sm:px-0">
       <header className="flex flex-wrap items-end justify-between gap-4">
@@ -24,10 +24,25 @@ export default function AdminMissionsPage() {
           Nova missão
         </Link>
       </header>
+      <Suspense>
+        <GrantedNotice searchParams={searchParams} />
+      </Suspense>
       <Suspense fallback={<TabSkeleton />}>
         <Missions />
       </Suspense>
     </div>
+  );
+}
+
+/** Missão salva que já premiou quem cumpria (ex.: contador de títulos). */
+async function GrantedNotice({ searchParams }: { searchParams: PageProps<"/admin/missoes">["searchParams"] }) {
+  const granted = Number((await searchParams).liberados ?? 0);
+  if (!(granted > 0)) return null;
+
+  return (
+    <p role="status" className="rounded-2xl border-2 border-lime bg-panel p-4 font-bold">
+      Missão salva. {granted === 1 ? "1 prêmio liberado" : `${granted} prêmios liberados`} agora para quem já cumpria a condição.
+    </p>
   );
 }
 

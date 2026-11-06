@@ -9,6 +9,7 @@ use App\Models\League;
 use App\Models\Mission;
 use App\Services\Missions\ConditionCatalog;
 use App\Services\Missions\Conditions\Condition;
+use App\Services\Missions\MissionRunner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -17,11 +18,12 @@ use Illuminate\Validation\Rule;
 
 /**
  * Missões na moderação (só admin): condição do catálogo com parâmetros, recompensas, segredo
- * e dica, ativa e período. A missão vale dali para frente, nos próximos eventos.
+ * e dica, ativa e período. A missão vale dali para frente, nos próximos eventos; condições que
+ * dá para conferir a qualquer momento (contador de títulos) premiam na hora quem já cumpre.
  */
 class MissionController extends Controller
 {
-    public function __construct(private ConditionCatalog $catalog) {}
+    public function __construct(private ConditionCatalog $catalog, private MissionRunner $runner) {}
 
     /** Tipos de condição disponíveis, com os parâmetros que cada um aceita. */
     public function conditions(): JsonResponse
@@ -68,14 +70,14 @@ class MissionController extends Controller
         $mission = new Mission(['key' => $this->uniqueKey((string) $request->input('name'))]);
         $this->save($request, $mission);
 
-        return (new MissionResource($mission->load('rewards')))->response()->setStatusCode(201);
+        return $this->saved($mission)->response()->setStatusCode(201);
     }
 
     public function update(Request $request, Mission $mission): MissionResource
     {
         $this->save($request, $mission);
 
-        return new MissionResource($mission->load('rewards'));
+        return $this->saved($mission);
     }
 
     /** Liga/desliga a missão direto da lista. */
@@ -83,7 +85,15 @@ class MissionController extends Controller
     {
         $mission->update($request->validate(['active' => ['required', 'boolean']]));
 
-        return new MissionResource($mission->load('rewards'));
+        return $this->saved($mission);
+    }
+
+    /** Missão salva, com quantos prêmios saíram na hora para quem já cumpria (meta.granted). */
+    private function saved(Mission $mission): MissionResource
+    {
+        $granted = $this->runner->backfill($mission);
+
+        return (new MissionResource($mission->load('rewards')))->additional(['meta' => ['granted' => $granted]]);
     }
 
     /** Apagar não tira o prêmio de quem já cumpriu. */
