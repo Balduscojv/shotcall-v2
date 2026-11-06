@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AdminNavLink } from "@/components/admin/AdminNavLink";
 import { Logo } from "@/components/ui/Logo";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ProfileNavLink, ProfileNavLinkStatic } from "@/components/profile/ProfileNavLink";
 
 const navLink = "inline-flex h-11 items-center px-2 font-bold whitespace-nowrap text-chalk no-underline hover:text-lime sm:px-3";
 
@@ -27,10 +28,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link href="/time" className={navLink}>
               Escale seu time
             </Link>
-            <Link href="/perfil" className={navLink}>
-              <span className="sm:hidden">Perfil</span>
-              <span className="hidden sm:inline">Meu perfil</span>
-            </Link>
+            <Suspense fallback={<ProfileNavLinkStatic />}>
+              <ProfileNavLink />
+            </Suspense>
           </nav>
         </div>
       </header>

@@ -29,6 +29,36 @@ class FriendshipController extends Controller
         ]]);
     }
 
+    /**
+     * Busca pelo @ (começo do handle), para adicionar amigos. Cada resultado vem com a
+     * relação comigo (`friendship`). Eu mesmo fico de fora.
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $me = $request->user();
+        $term = strtolower(trim(ltrim((string) $request->query('q'), '@ ')));
+        if (mb_strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        // "_" é comum no @ e é curinga no LIKE: escapa.
+        $pattern = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term).'%';
+        $users = User::whereRaw('handle LIKE ? ESCAPE ?', [$pattern, '!'])
+            ->whereKeyNot($me->id)
+            ->withEquipped()
+            ->orderByRaw('length(handle)')
+            ->orderBy('handle')
+            ->limit(8)
+            ->get();
+
+        $statuses = $this->friends->statuses($me, $users);
+
+        return response()->json(['data' => $users->map(fn (User $user) => [
+            ...(new UserResource($user))->resolve($request),
+            'friendship' => $statuses[$user->id],
+        ])]);
+    }
+
     public function store(StoreFriendRequest $request): JsonResponse
     {
         $me = $request->user();

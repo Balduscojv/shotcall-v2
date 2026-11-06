@@ -23,6 +23,8 @@ const titles: Record<string, string> = {
   "welcome-title": "bg-lime text-ink",
   "welcome-title-ballhog": "bg-orange text-ink",
   "welcome-title-sixth": "bg-pink text-ink",
+  // Dupla: as duas cores do arremesso de três.
+  "mission-splash-brothers": "bg-linear-to-r from-cyan to-yellow text-ink",
 };
 
 const bannerByRarity: Record<Rarity, string> = {

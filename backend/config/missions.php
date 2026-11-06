@@ -11,4 +11,10 @@ return [
         'min_period' => 4,         // 4º quarto ou prorrogação
         'max_margin' => 5,         // diferença no placar logo depois da cesta
     ],
+
+    // Splash Brothers: dois amigos que finalizaram juntos pelo menos esta quantidade de ligas
+    // (a liga global não conta).
+    'splash_brothers' => [
+        'min_leagues' => 3,
+    ],
 ];

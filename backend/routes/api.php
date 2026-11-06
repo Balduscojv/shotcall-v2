@@ -8,8 +8,8 @@ use App\Http\Controllers\FantasyController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ShotCallController;
 use App\Http\Controllers\ProfileMediaController;
+use App\Http\Controllers\ShotCallController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Amizades
     Route::get('friends/requests', [FriendshipController::class, 'requests']);
+    Route::get('friends/search', [FriendshipController::class, 'search'])->middleware('throttle:60,1');
     Route::post('friends', [FriendshipController::class, 'store'])->middleware('throttle:30,1');
     Route::post('friends/{user:handle}/accept', [FriendshipController::class, 'accept']);
     Route::delete('friends/{user:handle}', [FriendshipController::class, 'destroy']);

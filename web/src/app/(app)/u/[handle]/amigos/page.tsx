@@ -5,7 +5,7 @@ import { serverApi } from "@/lib/server-api";
 import { getProfile } from "@/lib/profile";
 import type { FriendRequests, User } from "@/lib/types";
 import { Avatar } from "@/components/profile/Avatar";
-import { AddFriendForm, RequestActions } from "@/components/profile/FriendForms";
+import { AddFriendForm, RemoveFriendButton, RequestActions } from "@/components/profile/FriendForms";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
 
 export const metadata = { title: "Amigos" };
@@ -62,17 +62,18 @@ async function Friends({ params }: Pick<PageProps<"/u/[handle]/amigos">, "params
         ) : (
           <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
             {friends.map((friend) => (
-              <li key={friend.id}>
-                <Link
-                  href={`/u/${friend.handle}`}
-                  className="flex items-center gap-3 rounded-2xl border-[3px] border-ink bg-panel p-3 text-chalk no-underline transition-transform hover:-translate-y-0.5 hover:shadow-hard"
-                >
+              <li
+                key={friend.id}
+                className="flex items-center gap-2 rounded-2xl border-[3px] border-ink bg-panel p-3 transition-transform focus-within:shadow-hard hover:-translate-y-0.5 hover:shadow-hard"
+              >
+                <Link href={`/u/${friend.handle}`} className="flex min-w-0 flex-1 items-center gap-3 text-chalk no-underline">
                   <Avatar user={friend} size="md" />
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate font-extrabold">{friend.name}</span>
                     <span className="truncate text-sm text-cyan">@{friend.handle}</span>
                   </span>
                 </Link>
+                {own && <RemoveFriendButton handle={friend.handle!} name={friend.name} />}
               </li>
             ))}
           </ul>

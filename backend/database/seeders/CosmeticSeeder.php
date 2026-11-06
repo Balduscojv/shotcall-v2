@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\CosmeticSlot;
 use App\Models\Cosmetic;
 use App\Services\Missions\ClutchMission;
+use App\Services\Missions\SplashBrothersMission;
 use Illuminate\Database\Seeder;
 
 /**
@@ -62,13 +63,19 @@ class CosmeticSeeder extends Seeder
         ];
 
         // Missões secretas (app/Services/Missions): raras ou acima, liberadas por uma façanha
-        // num jogo. Antes disso o jogador só vê "???" e a dica.
+        // (num jogo, ou com amigos nas ligas). Antes disso o jogador só vê "???" e a dica.
         $missions = [
             [
                 'key' => 'mission-clutch', 'slot' => CosmeticSlot::Title, 'name' => 'Clutch', 'rarity' => 'RARE',
                 'description' => 'Seu cestinha fez a última cesta do jogo, e foi ela que decidiu.',
                 'trigger' => ClutchMission::TRIGGER,
                 'hint' => 'Confie no seu cestinha quando o relógio apertar.',
+            ],
+            [
+                'key' => 'mission-splash-brothers', 'slot' => CosmeticSlot::Title, 'name' => 'Splash Brothers', 'rarity' => 'RARE',
+                'description' => 'Amigos que finalizaram 3 ligas juntos. Dupla que não se separa.',
+                'trigger' => SplashBrothersMission::TRIGGER,
+                'hint' => 'Forme amizades consistentes.',
             ],
         ];
 

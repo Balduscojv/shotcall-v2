@@ -127,7 +127,7 @@ it('missão bloqueada aparece como ??? com a dica, e se revela depois de liberad
 
     $res = $this->getJson('/api/me/cosmetics')->assertOk();
     expect(collect($res->json('data'))->pluck('key'))->not->toContain('mission-clutch')
-        ->and($res->json('meta.locked'))->toHaveCount(1)
+        ->and($res->json('meta.locked'))->toHaveCount(2)   // Clutch e Splash Brothers
         ->and($res->json('meta.locked.0'))->toMatchArray([
             'slot' => 'TITLE', 'rarity' => 'RARE', 'hint' => 'Confie no seu cestinha quando o relógio apertar.',
         ])
@@ -137,7 +137,7 @@ it('missão bloqueada aparece como ??? com a dica, e se revela depois de liberad
     app(MissionRunner::class)->gameFinished($this->game);
 
     $res = $this->getJson('/api/me/cosmetics')->assertOk();
-    expect($res->json('meta.locked'))->toBe([])
+    expect($res->json('meta.locked'))->toHaveCount(1)   // só o Splash Brothers
         ->and(collect($res->json('data'))->firstWhere('key', 'mission-clutch'))
         ->toMatchArray(['name' => 'Clutch', 'secret' => true, 'owned' => true]);
 

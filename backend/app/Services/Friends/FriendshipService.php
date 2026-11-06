@@ -4,6 +4,7 @@ namespace App\Services\Friends;
 
 use App\Models\Friendship;
 use App\Models\User;
+use App\Services\Missions\SplashBrothersMission;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\ValidationException;
 
@@ -11,10 +12,16 @@ use Illuminate\Validation\ValidationException;
 class FriendshipService
 {
     public const SELF = 'SELF';
+
     public const FRIENDS = 'FRIENDS';
+
     public const SENT = 'SENT';         // eu pedi, falta a outra pessoa aceitar
+
     public const RECEIVED = 'RECEIVED'; // a outra pessoa pediu, falta eu aceitar
+
     public const NONE = 'NONE';
+
+    public function __construct(private SplashBrothersMission $splashBrothers) {}
 
     public function status(User $viewer, User $user): string
     {
@@ -30,6 +37,33 @@ class FriendshipService
             $link->requester_id === $viewer->id => self::SENT,
             default => self::RECEIVED,
         };
+    }
+
+    /**
+     * Relação de quem vê com vários usuários de uma vez (uma consulta só).
+     *
+     * @param  iterable<User>  $users
+     * @return array<int, string> status por id de usuário
+     */
+    public function statuses(User $viewer, iterable $users): array
+    {
+        $ids = collect($users)->pluck('id');
+        $links = Friendship::involving($viewer)
+            ->where(fn ($q) => $q->whereIn('requester_id', $ids)->orWhereIn('addressee_id', $ids))
+            ->get()
+            ->keyBy(fn (Friendship $f) => $f->requester_id === $viewer->id ? $f->addressee_id : $f->requester_id);
+
+        return $ids->mapWithKeys(function (int $id) use ($viewer, $links) {
+            $link = $links->get($id);
+
+            return [$id => match (true) {
+                $id === $viewer->id => self::SELF,
+                $link === null => self::NONE,
+                $link->status === Friendship::ACCEPTED => self::FRIENDS,
+                $link->requester_id === $viewer->id => self::SENT,
+                default => self::RECEIVED,
+            }];
+        })->all();
     }
 
     /** Pedido de amizade. Se a outra pessoa já tinha pedido, vira amizade na hora. */
@@ -61,6 +95,9 @@ class FriendshipService
             ->firstOrFail();
 
         $link->update(['status' => Friendship::ACCEPTED, 'accepted_at' => now()]);
+
+        // O par pode já ter finalizado ligas juntos antes de virar amigo.
+        $this->splashBrothers->checkPair($user, $requester);
 
         return $link;
     }

@@ -211,6 +211,9 @@ export type ProfileLeague = {
 
 export type FriendRequests = { received: User[]; sent: User[] };
 
+/** Resultado da busca por @ (GET /friends/search), com a relação comigo. */
+export type FriendSearchResult = User & { friendship: Friendship };
+
 /** Rodada do fantasy (FantasyController::roundInfo). */
 export type FantasyRound = {
   id: number;
@@ -290,3 +293,4 @@ export type FantasyTeamResponse = {
 };
 
 export type MarketResponse = { data: MarketPlayer[]; meta: { round: FantasyRound; teams: Team[] } };
+
