@@ -31,15 +31,16 @@ class SeasonSeeder extends Seeder
         while ($monday->lt(Carbon::parse('2027-06-28', $tz))) {
             $starts = $monday->copy()->utc();
             $ends = $monday->copy()->addDays(6)->endOfDay()->utc();
-            Round::updateOrCreate(['season_id' => $season->id, 'number' => $number], [
-                'starts_at' => $starts,
-                'ends_at' => $ends,
-                'market_status' => match (true) {
-                    $ends->isPast() => Round::SETTLED,
-                    $starts->isPast() => Round::OPEN,
-                    default => Round::UPCOMING,
-                },
-            ]);
+            // O estado do mercado só é definido na criação: depois quem cuida é o fantasy
+            // (abre, trava e apura). Rodar o seeder de novo não pode desfazer isso.
+            $round = Round::firstOrNew(['season_id' => $season->id, 'number' => $number]);
+            $round->fill(['starts_at' => $starts, 'ends_at' => $ends]);
+            $round->market_status ??= match (true) {
+                $ends->isPast() => Round::SETTLED,
+                $starts->isPast() => Round::LOCKED,
+                default => Round::UPCOMING,
+            };
+            $round->save();
             $monday->addWeek();
             $number++;
         }

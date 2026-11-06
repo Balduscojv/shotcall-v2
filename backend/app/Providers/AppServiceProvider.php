@@ -8,6 +8,8 @@ use App\Integrations\Nba\GameDataProvider;
 use App\Integrations\Nba\NbaCdnClient;
 use App\Models\User;
 use App\Services\Fantasy\FantasyScorer;
+use App\Services\Fantasy\LineupValidator;
+use App\Services\Fantasy\PriceVariation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Pesos da pontuação fantasy (config/fantasy.php).
         $this->app->bind(FantasyScorer::class, fn () => new FantasyScorer(config('fantasy.scoring')));
+        $this->app->bind(PriceVariation::class, fn () => new PriceVariation(config('fantasy.pricing')));
+        $this->app->bind(LineupValidator::class, fn () => new LineupValidator(config('fantasy.lineup')));
 
         // Fonte dos jogos da NBA (config/services.php, NBA_PROVIDER).
         $this->app->singleton(GameDataProvider::class, fn () => match (config('services.nba.provider')) {

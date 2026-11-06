@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UserCosmeticController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CosmeticController;
+use App\Http\Controllers\FantasyController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\ProfileController;
@@ -30,6 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('games', [GameController::class, 'index']);
     Route::get('games/{game}', [GameController::class, 'show']);
     Route::put('games/{game}/shot-call', [ShotCallController::class, 'update'])->middleware('throttle:30,1');
+
+    // Fantasy: mercado da rodada e meu time
+    Route::get('fantasy/market', [FantasyController::class, 'market']);
+    Route::get('fantasy/team', [FantasyController::class, 'team']);
+    Route::put('fantasy/team', [FantasyController::class, 'save'])->middleware('throttle:30,1');
 
     // Meus prêmios: coleção e o que está em uso (um por tipo)
     Route::get('me/cosmetics', [CosmeticController::class, 'index']);

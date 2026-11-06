@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 
 const two = (n: number) => String(n).padStart(2, "0");
 
-/** "TRAVA EM 02:24:12" até a bola subir. No zero, recarrega a página (o palpite trava). */
-export function LockCountdown({ lockAt }: { lockAt: string }) {
+/** Contagem até a trava ("TRAVA EM 02:24:12", "MERCADO FECHA EM 3d 11h"). No zero, recarrega a página. */
+export function LockCountdown({ lockAt, label = "TRAVA EM" }: { lockAt: string; label?: string }) {
   const router = useRouter();
   const target = new Date(lockAt).getTime();
   const [now, setNow] = useState<number | null>(null);
@@ -41,7 +41,7 @@ export function LockCountdown({ lockAt }: { lockAt: string }) {
 
   return (
     <span className="flex flex-col items-center gap-0.5">
-      <span className="text-[11px] font-extrabold tracking-wider">TRAVA EM</span>
+      <span className="text-[11px] font-extrabold tracking-wider">{label}</span>
       <span className="font-score text-3xl leading-none text-yellow tabular-nums" role="timer" aria-live="off">
         {text}
       </span>

@@ -1,0 +1,37 @@
+{
+ "depthchart": [
+  {
+   "name": "Depth Chart",
+   "positions": {
+    "pg": {
+     "position": {
+      "abbreviation": "PG",
+      "name": "Point Guard"
+     },
+     "athletes": [
+      {
+       "id": "4433188",
+       "displayName": "Devin Carter"
+      },
+      {
+       "id": "3195",
+       "displayName": "Mike Conley"
+      }
+     ]
+    },
+    "sg": {
+     "position": {
+      "abbreviation": "SG",
+      "name": "Shooting Guard"
+     },
+     "athletes": [
+      {
+       "id": "3195",
+       "displayName": "Mike Conley"
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

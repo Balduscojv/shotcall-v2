@@ -2,6 +2,8 @@
 
 use App\Jobs\SyncLiveGame;
 use App\Models\Game;
+use App\Services\Fantasy\FantasyMarket;
+use App\Services\Fantasy\RoundSettlement;
 use App\Services\Nba\RosterSync;
 use App\Services\Nba\ScheduleSync;
 use Illuminate\Support\Facades\Schedule;
@@ -24,3 +26,10 @@ Schedule::call(function () {
 // Elencos (trocas, contratações, dispensas): uma vez por dia.
 Schedule::call(fn () => app(RosterSync::class)->run())
     ->name('nba-rosters')->dailyAt('09:00')->timezone('UTC')->withoutOverlapping();
+
+// Fantasy: o mercado fecha no primeiro jogo da rodada; quando o último jogo termina, a rodada
+// é apurada e o mercado da próxima abre.
+Schedule::call(function () {
+    app(FantasyMarket::class)->lockStarted();
+    app(RoundSettlement::class)->settleFinished();
+})->name('fantasy-rounds')->everyMinute()->withoutOverlapping();

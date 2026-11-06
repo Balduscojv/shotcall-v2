@@ -5,8 +5,8 @@ return [
 
     'starting_balance' => 100.0,
 
-    // Titulares por posição. Sem banco de reservas.
-    'lineup' => ['G' => 2, 'F' => 2, 'C' => 1],
+    // Titulares: um de cada posição (armador, ala-armador, ala, ala-pivô, pivô). Sem banco.
+    'lineup' => ['PG' => 1, 'SG' => 1, 'SF' => 1, 'PF' => 1, 'C' => 1],
 
     // O Cestinha escolhido pelo usuário pontua em dobro.
     'cestinha_multiplier' => 2.0,

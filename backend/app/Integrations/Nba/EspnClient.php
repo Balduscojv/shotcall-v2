@@ -156,18 +156,57 @@ final class EspnClient implements GameDataProvider
     {
         $players = [];
         foreach ($this->espnTeams() as $espnId => $team) {
+            $roles = $this->depthRoles($espnId);
             foreach ($this->get("/teams/{$espnId}/roster")['athletes'] ?? [] as $a) {
+                $position = self::position($a['position']['abbreviation'] ?? null);
                 $players[] = [
                     'id' => (int) $a['id'],
                     'team_id' => $team,
                     'full_name' => $a['fullName'] ?? $a['displayName'] ?? '',
-                    'position' => self::position($a['position']['abbreviation'] ?? null),
+                    'position' => $position,
+                    'role' => $roles[(string) $a['id']] ?? self::defaultRole($position),
                     'jersey' => $a['jersey'] ?? null,
                 ];
             }
         }
 
         return $players;
+    }
+
+    /**
+     * Posição detalhada (PG, SG, SF, PF, C) pelo quadro de profundidade do time. Quem aparece em
+     * mais de uma fica com aquela em que está mais acima (titular antes de reserva).
+     *
+     * @return array<string, string> id do atleta na ESPN => posição
+     */
+    private function depthRoles(string $espnTeamId): array
+    {
+        $best = [];
+        foreach ($this->get("/teams/{$espnTeamId}/depthcharts")['depthchart'][0]['positions'] ?? [] as $slot) {
+            $role = strtoupper($slot['position']['abbreviation'] ?? '');
+            if (! in_array($role, ['PG', 'SG', 'SF', 'PF', 'C'], true)) {
+                continue;
+            }
+            foreach (array_values($slot['athletes'] ?? []) as $rank => $a) {
+                $id = (string) ($a['id'] ?? '');
+                if ($id !== '' && (! isset($best[$id]) || $rank < $best[$id][1])) {
+                    $best[$id] = [$role, $rank];
+                }
+            }
+        }
+
+        return array_map(fn ($b) => $b[0], $best);
+    }
+
+    /** Sem quadro de profundidade: armador vira ala-armador, ala vira ala, pivô continua pivô. */
+    private static function defaultRole(?string $position): ?string
+    {
+        return match ($position) {
+            'G' => 'SG',
+            'F' => 'SF',
+            'C' => 'C',
+            default => null,
+        };
     }
 
     /** Uma linha do calendário; null se algum time não é nosso (ex.: jogo de exibição). */

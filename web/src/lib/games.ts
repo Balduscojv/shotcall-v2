@@ -83,5 +83,9 @@ export function teamAccent(team: Pick<Team, "primary_color" | "secondary_color">
   return luminance(team.secondary_color) >= 0.06 ? team.secondary_color : "#9AA0B2";
 }
 
+/** Cor do texto em cima de teamAccent: escuro nas cores claras (dourado do Warriors, prata do Spurs...). */
+export const onTeamAccent = (team: Pick<Team, "primary_color" | "secondary_color">) =>
+  luminance(teamAccent(team)) > 0.35 ? "var(--color-ink)" : "var(--color-chalk)";
+
 /** "45%" ou "—" */
 export const pct = (made: number, attempted: number) => (attempted > 0 ? `${Math.round((made / attempted) * 100)}%` : "—");

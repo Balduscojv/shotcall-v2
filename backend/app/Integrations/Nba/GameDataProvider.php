@@ -30,9 +30,9 @@ interface GameDataProvider
     public function playByPlay(string $gameId, int $afterActionNumber = 0): array;
 
     /**
-     * Elencos atuais dos 30 times (nomes reais, posição e número). Fonte sem elenco devolve [].
+     * Elencos atuais dos 30 times: nome real, posição (G, F, C), posição detalhada (PG, SG, SF, PF, C) e número. Fonte sem elenco devolve [].
      *
-     * @return list<array{id: int, team_id: int, full_name: string, position: ?string, jersey: ?string}>
+     * @return list<array{id: int, team_id: int, full_name: string, position: ?string, role: ?string, jersey: ?string}>
      */
     public function rosters(): array;
 }

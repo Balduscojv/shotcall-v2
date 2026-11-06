@@ -28,6 +28,7 @@ class RosterSync
                     'team_id' => $p['team_id'],
                     'full_name' => $p['full_name'],
                     'position' => $p['position'],
+                    'role' => $p['role'] ?? null,
                     'jersey' => $p['jersey'],
                     'active' => true,
                 ]);

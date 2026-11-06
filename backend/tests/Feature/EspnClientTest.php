@@ -19,6 +19,8 @@ beforeEach(function () {
             str_contains($url, '/teams/2/schedule') && ! str_contains($url, 'seasontype=3') => Http::response($fixture('schedule_bos')),
             str_contains($url, '/schedule') => Http::response(['events' => []]),
             str_contains($url, '/teams/2/roster') => Http::response($fixture('roster_bos')),
+            str_contains($url, '/teams/2/depthcharts') => Http::response($fixture('depth_bos')),
+            str_contains($url, '/depthcharts') => Http::response(['depthchart' => []]),
             str_contains($url, '/roster') => Http::response(['athletes' => []]),
             str_contains($url, '/summary') => Http::response($fixture('summary_401909936')),
             default => Http::response([], 404),
@@ -90,9 +92,13 @@ it('o placar e as jogadas de uma atualização saem de uma chamada só', functio
     Http::assertSentCount(2); // /teams (tradução dos ids) + /summary
 });
 
-it('traz os elencos com o nosso id de time', function () {
-    $players = $this->espn->rosters();
+it('traz os elencos com o nosso id de time e a posição detalhada do quadro de profundidade', function () {
+    $players = collect($this->espn->rosters())->keyBy('full_name');
 
     expect($players)->toHaveCount(3)
-        ->and($players[0])->toBe(['id' => 4433188, 'team_id' => 1610612738, 'full_name' => 'Devin Carter', 'position' => 'G', 'jersey' => '99']);
+        ->and($players['Devin Carter'])->toBe(['id' => 4433188, 'team_id' => 1610612738, 'full_name' => 'Devin Carter', 'position' => 'G', 'role' => 'PG', 'jersey' => '99'])
+        // Reserva de PG, mas titular de SG: fica SG.
+        ->and($players['Mike Conley']['role'])->toBe('SG')
+        // Fora do quadro: pela posição genérica.
+        ->and($players['Luka Garza'])->toMatchArray(['position' => 'C', 'role' => 'C']);
 });

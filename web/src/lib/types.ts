@@ -210,3 +210,68 @@ export type ProfileLeague = {
 };
 
 export type FriendRequests = { received: User[]; sent: User[] };
+
+/** Rodada do fantasy (FantasyController::roundInfo). */
+export type FantasyRound = {
+  id: number;
+  number: number;
+  status: "UPCOMING" | "OPEN" | "LOCKED" | "SETTLING" | "SETTLED";
+  starts_at: string;
+  ends_at: string;
+  /** Primeiro jogo da rodada: quando o mercado fecha. */
+  lock_at: string | null;
+};
+
+/** Vaga na quadra: uma por posição detalhada. */
+export type FantasySlot = PlayerRole;
+export type FantasyPosition = "G" | "F" | "C";
+/** Posição detalhada: PG armador, SG ala-armador, SF ala, PF ala-pivô, C pivô. */
+export type PlayerRole = "PG" | "SG" | "SF" | "PF" | "C";
+
+/** Jogador no mercado da rodada. */
+export type MarketPlayer = {
+  id: number;
+  name: string;
+  team_id: number;
+  position: FantasyPosition;
+  role: PlayerRole | null;
+  jersey: string | null;
+  price: number;
+  variation: number;
+  min_to_gain: number;
+  average: number | null;
+  games_played: number;
+  games_in_round: number;
+};
+
+export type FantasyTeamPlayer = {
+  slot: FantasySlot;
+  id: number;
+  name: string;
+  position: FantasyPosition;
+  role: PlayerRole | null;
+  team: Team | null;
+  price: number;
+  bought_at_price: number;
+  /** Pontos na rodada até agora (cestinha já multiplicado). */
+  points: number;
+  games_played: number;
+  games_in_round: number;
+  live: boolean;
+  cestinha: boolean;
+};
+
+export type FantasyTeam = {
+  cestinha_id: number | null;
+  balance: number;
+  patrimony: number;
+  cost: number;
+  points: number;
+  players: FantasyTeamPlayer[];
+};
+
+export type FantasyTeamResponse = {
+  data: { round: FantasyRound; starting_balance: number; cestinha_multiplier: number; team: FantasyTeam | null };
+};
+
+export type MarketResponse = { data: MarketPlayer[]; meta: { round: FantasyRound; teams: Team[] } };
