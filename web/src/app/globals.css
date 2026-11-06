@@ -156,6 +156,45 @@
     inset 0 0 0 1.5px var(--color-ink);
 }
 
+/* Parquet: madeira de ginásio. Os veios são anéis em volta da foto (seguem o aro), as juntas
+   das tábuas são riscos escuros a cada 30° e um brilho de verniz pega o lado de cima. */
+@utility frame-parquet {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    repeating-conic-gradient(from 8deg, rgba(10, 10, 10, 0.45) 0 1.2deg, transparent 1.2deg 30deg) border-box,
+    linear-gradient(160deg, rgba(255, 255, 255, 0.28), transparent 45%) border-box,
+    repeating-radial-gradient(circle, #d49a55 0 1.5px, #b97b3a 1.5px 2.5px, #dcaa6a 2.5px 4px, #c98d4a 4px 5px) border-box;
+  box-shadow:
+    0 0 0 1.5px var(--color-ink),
+    inset 0 0 0 1.5px var(--color-ink);
+}
+
+/* Garrafão: pintura azul da quadra com a linha branca por fora (e o contorno preto depois dela)
+   e as marcações do lance livre, quatro tracinhos brancos de cada lado. */
+@utility frame-paint {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    conic-gradient(
+      transparent 0 70.5deg,
+      var(--color-chalk) 70.5deg 73.5deg, transparent 73.5deg 82.5deg,
+      var(--color-chalk) 82.5deg 85.5deg, transparent 85.5deg 94.5deg,
+      var(--color-chalk) 94.5deg 97.5deg, transparent 97.5deg 106.5deg,
+      var(--color-chalk) 106.5deg 109.5deg, transparent 109.5deg 250.5deg,
+      var(--color-chalk) 250.5deg 253.5deg, transparent 253.5deg 262.5deg,
+      var(--color-chalk) 262.5deg 265.5deg, transparent 265.5deg 274.5deg,
+      var(--color-chalk) 274.5deg 277.5deg, transparent 277.5deg 286.5deg,
+      var(--color-chalk) 286.5deg 289.5deg, transparent 289.5deg
+    ) border-box,
+    radial-gradient(rgba(255, 255, 255, 0.08) 0.7px, transparent 1.1px) 0 0 / 3px 3px border-box,
+    linear-gradient(#2456c9, #1b3f99) border-box;
+  box-shadow:
+    0 0 0 1.5px var(--color-chalk),
+    0 0 0 3px var(--color-ink),
+    inset 0 0 0 1.5px var(--color-ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

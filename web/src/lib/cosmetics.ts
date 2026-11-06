@@ -14,11 +14,15 @@ const banners: Record<string, string> = {
 /** Contorno da foto de perfil: uma cor de borda ou uma moldura desenhada de globals.css. */
 const frames: Record<string, string> = {
   "welcome-frame": "frame-ball",
+  "welcome-frame-parquet": "frame-parquet",
+  "welcome-frame-paint": "frame-paint",
 };
 
 /** Etiqueta do título ao lado do @. */
 const titles: Record<string, string> = {
   "welcome-title": "bg-lime text-ink",
+  "welcome-title-ballhog": "bg-orange text-ink",
+  "welcome-title-sixth": "bg-pink text-ink",
 };
 
 const bannerByRarity: Record<Rarity, string> = {

@@ -39,8 +39,24 @@ class CosmeticSeeder extends Seeder
                 'description' => 'A moldura de quem acabou de chegar na quadra.',
             ],
             [
-                'key' => 'welcome-title', 'slot' => CosmeticSlot::Title, 'name' => 'Novato da Quadra',
-                'description' => 'Todo mundo começa em algum lugar.',
+                'key' => 'welcome-frame-parquet', 'slot' => CosmeticSlot::Frame, 'name' => 'Parquet',
+                'description' => 'Madeira encerada de ginásio, com as juntas das tábuas.',
+            ],
+            [
+                'key' => 'welcome-frame-paint', 'slot' => CosmeticSlot::Frame, 'name' => 'Garrafão',
+                'description' => 'Pintura do garrafão, com a linha e as marcações do lance livre.',
+            ],
+            [
+                'key' => 'welcome-title', 'slot' => CosmeticSlot::Title, 'name' => 'Rookie',
+                'description' => 'Primeira temporada na quadra. Todo mundo começa em algum lugar.',
+            ],
+            [
+                'key' => 'welcome-title-ballhog', 'slot' => CosmeticSlot::Title, 'name' => 'Fominha',
+                'description' => 'Pegou na bola, é arremesso. Passe é só em último caso.',
+            ],
+            [
+                'key' => 'welcome-title-sixth', 'slot' => CosmeticSlot::Title, 'name' => 'Sexto Homem',
+                'description' => 'Sai do banco e muda o jogo.',
             ],
         ];
 

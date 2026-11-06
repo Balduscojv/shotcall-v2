@@ -26,18 +26,22 @@ function signUp(string $handle): User
     return User::where('handle', $handle)->firstOrFail();
 }
 
-it('libera e equipa os 3 prêmios de boas-vindas no cadastro', function () {
+it('libera os prêmios de boas-vindas e equipa um de cada tipo no cadastro', function () {
     $user = signUp('ana');
 
     expect($user->cosmetics()->pluck('key')->sort()->values()->all())
-        ->toBe(['welcome-banner', 'welcome-banner-arena', 'welcome-banner-street', 'welcome-frame', 'welcome-title'])
+        ->toBe([
+            'welcome-banner', 'welcome-banner-arena', 'welcome-banner-street',
+            'welcome-frame', 'welcome-frame-paint', 'welcome-frame-parquet',
+            'welcome-title', 'welcome-title-ballhog', 'welcome-title-sixth',
+        ])
         ->and($user->cosmetics()->first()->pivot->unlock_reason)->toBe('Boas-vindas à quadra')
         ->and($user->cosmetics()->first()->pivot->granted_by)->toBeNull();
 
     $this->getJson('/api/me')->assertOk()
         ->assertJsonPath('data.equipped.banner.key', 'welcome-banner')
         ->assertJsonPath('data.equipped.frame.key', 'welcome-frame')
-        ->assertJsonPath('data.equipped.title.name', 'Novato da Quadra');
+        ->assertJsonPath('data.equipped.title.name', 'Rookie');
 });
 
 it('o perfil mostra o que o usuário está usando', function () {
@@ -48,8 +52,8 @@ it('o perfil mostra o que o usuário está usando', function () {
     $this->actingAs($bia)->getJson('/api/users/ana')
         ->assertJsonPath('data.equipped.title.key', 'welcome-title')
         ->assertJsonPath('data.equipped.frame.asset_key', 'welcome-frame');
-    $awards = $this->getJson('/api/users/ana/awards')->assertJsonCount(5, 'data')->json('data');
-    // Um por tipo em uso; dos três banners, o Pôr do Sol (primeiro do catálogo).
+    $awards = $this->getJson('/api/users/ana/awards')->assertJsonCount(9, 'data')->json('data');
+    // Um por tipo em uso; em cada tipo, o primeiro do catálogo.
     expect(collect($awards)->where('equipped', true)->pluck('key')->sort()->values()->all())
         ->toBe(['welcome-banner', 'welcome-frame', 'welcome-title']);
 });
@@ -62,7 +66,7 @@ it('o comando libera o gatilho para quem já tinha conta, sem repetir', function
         ->expectsOutputToContain('0 prêmio(s)')->assertSuccessful();
 
     $old->refresh();
-    expect($old->cosmetics()->count())->toBe(5)
+    expect($old->cosmetics()->count())->toBe(9)
         ->and($old->equipped_title_id)->toBe(Cosmetic::where('key', 'welcome-title')->value('id'));
 });
 
@@ -83,7 +87,7 @@ it('equipa e tira prêmios que o jogador tem, um por tipo', function () {
     $this->putJson('/api/me/cosmetics/banner', [])->assertUnprocessable()->assertJsonValidationErrors('key');
 
     expect($ana->fresh()->equipped_banner_id)->toBe(Cosmetic::where('key', 'welcome-banner')->value('id'));
-    $this->getJson('/api/me/cosmetics')->assertJsonCount(5, 'data');
+    $this->getJson('/api/me/cosmetics')->assertJsonCount(9, 'data');
 
     // Trocar entre os banners de boas-vindas.
     $this->putJson('/api/me/cosmetics/banner', ['key' => 'welcome-banner-street'])->assertOk()
