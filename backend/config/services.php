@@ -28,6 +28,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Fonte dos jogos da NBA (app/Integrations/Nba): espn (API pública do site da ESPN, não
+    // oficial), cdn (JSONs de cdn.nba.com) ou demo (simulação local, sem internet).
+    'nba' => [
+        'provider' => env('NBA_PROVIDER', 'espn'),
+        // Pacote de certificados (CA) para o HTTPS da fonte, quando o PHP local não tem um
+        // configurado (curl.cainfo). Nunca desligar a verificação.
+        'ca_bundle' => env('NBA_CA_BUNDLE'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

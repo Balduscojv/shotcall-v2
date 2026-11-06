@@ -1,0 +1,202 @@
+{
+ "events": [
+  {
+   "id": "401909088",
+   "date": "2026-10-20T19:00Z",
+   "seasonType": {
+    "id": "2",
+    "type": 2,
+    "name": "Regular Season",
+    "abbreviation": "reg"
+   },
+   "competitions": [
+    {
+     "venue": {
+      "fullName": "Little Caesars Arena"
+     },
+     "broadcasts": [
+      {
+       "type": {
+        "id": "1",
+        "shortName": "TV"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "NBC"
+       },
+       "lang": "en",
+       "region": "us",
+       "partnered": false
+      }
+     ],
+     "status": {
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "8",
+        "abbreviation": "DET",
+        "location": "Detroit",
+        "shortDisplayName": "Pistons"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "2",
+        "abbreviation": "BOS",
+        "location": "Boston",
+        "shortDisplayName": "Celtics"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909095",
+   "date": "2026-10-23T23:00Z",
+   "seasonType": {
+    "id": "2",
+    "type": 2,
+    "name": "Regular Season",
+    "abbreviation": "reg"
+   },
+   "competitions": [
+    {
+     "venue": {
+      "fullName": "TD Garden"
+     },
+     "broadcasts": [
+      {
+       "type": {
+        "id": "4",
+        "shortName": "Streaming"
+       },
+       "market": {
+        "id": "1",
+        "type": "National"
+       },
+       "media": {
+        "shortName": "Prime Video"
+       },
+       "lang": "en",
+       "region": "us",
+       "partnered": false
+      }
+     ],
+     "status": {
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "2",
+        "abbreviation": "BOS",
+        "location": "Boston",
+        "shortDisplayName": "Celtics"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "18",
+        "abbreviation": "NY",
+        "location": "New York",
+        "shortDisplayName": "Knicks"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909870",
+   "date": "2026-10-26T23:30Z",
+   "seasonType": {
+    "id": "2",
+    "type": 2,
+    "name": "Regular Season",
+    "abbreviation": "reg"
+   },
+   "competitions": [
+    {
+     "venue": {
+      "fullName": "TD Garden"
+     },
+     "broadcasts": [
+      {
+       "type": {
+        "id": "6",
+        "shortName": "Subscription Package"
+       },
+       "market": {
+        "id": "3",
+        "type": "Away"
+       },
+       "media": {
+        "shortName": "NBA League Pass"
+       },
+       "lang": "en",
+       "region": "us",
+       "partnered": false
+      }
+     ],
+     "status": {
+      "type": {
+       "id": "3",
+       "name": "STATUS_FINAL",
+       "state": "post",
+       "completed": true,
+       "description": "Final",
+       "detail": "Final",
+       "shortDetail": "Final"
+      }
+     },
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "id": "2",
+        "abbreviation": "BOS",
+        "location": "Boston",
+        "shortDisplayName": "Celtics"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "id": "4",
+        "abbreviation": "CHI",
+        "location": "Chicago",
+        "shortDisplayName": "Bulls"
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\FriendshipController;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileMediaController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Foto de perfil e banner
     Route::post('me/{kind}', [ProfileMediaController::class, 'update'])->whereIn('kind', ['avatar', 'banner'])->middleware('throttle:20,1');
     Route::delete('me/{kind}', [ProfileMediaController::class, 'destroy'])->whereIn('kind', ['avatar', 'banner']);
+
+    // Calendário e jogos da NBA
+    Route::get('games', [GameController::class, 'index']);
+    Route::get('games/{game}', [GameController::class, 'show']);
 
     // Meus prêmios: coleção e o que está em uso (um por tipo)
     Route::get('me/cosmetics', [CosmeticController::class, 'index']);

@@ -18,7 +18,7 @@ export function Logo({ href = "/" }: { href?: string }) {
   return (
     <Link href={href} className="flex items-center gap-2.5 text-chalk no-underline" aria-label="ShotCall, início">
       <Ball />
-      <span className="font-display text-2xl">
+      <span className="font-display text-xl sm:text-2xl">
         SHOT<span className="text-orange">CALL</span>
       </span>
     </Link>

@@ -46,6 +46,84 @@ export type Cosmetic = {
 /** Missão secreta ainda não liberada: só tipo, raridade e a dica vaga (meta.locked de /me/cosmetics). */
 export type LockedMission = { id: number; slot: CosmeticSlot; rarity: Rarity; hint: string | null };
 
+/** Time da NBA com as cores da paleta (app/Http/Resources/GameResource.php). */
+export type Team = {
+  id: number;
+  tricode: string;
+  city: string;
+  name: string;
+  primary_color: string;
+  secondary_color: string;
+};
+
+export type GameStatus = "SCHEDULED" | "LIVE" | "FINAL" | "POSTPONED";
+
+/** Jogo no calendário. `clock` só vem com o jogo ao vivo. */
+export type Game = {
+  id: string;
+  phase: "PRESEASON" | "REGULAR" | "PLAYIN" | "PLAYOFFS";
+  start_time: string;
+  status: GameStatus;
+  period: number;
+  clock: string | null;
+  home_score: number;
+  away_score: number;
+  arena: string | null;
+  national_tv: string | null;
+  round: number | null;
+  home: Team;
+  away: Team;
+};
+
+/** GET /games: o dia da NBA (horário de Nova York), a semana em volta e os vizinhos com jogo. */
+export type GamesDay = {
+  data: Game[];
+  meta: {
+    date: string;
+    today: string;
+    week: { date: string; games: number; live: number }[];
+    prev_date: string | null;
+    next_date: string | null;
+  };
+};
+
+export type BoxLine = {
+  player_id: number;
+  name: string | null;
+  position: string | null;
+  jersey: string | null;
+  minutes: string | null;
+  pts: number;
+  reb: number;
+  ast: number;
+  stl: number;
+  blk: number;
+  tov: number;
+  fgm: number;
+  fga: number;
+  fg3m: number;
+  ftm: number;
+  fta: number;
+  plus_minus: number;
+};
+
+export type Leader = { player_id: number; name: string | null; value: number } | null;
+
+export type TeamSheet = {
+  totals: Record<"pts" | "reb" | "ast" | "stl" | "blk" | "tov" | "fgm" | "fga" | "fg3m" | "ftm" | "fta", number>;
+  leaders: { pts: Leader; reb: Leader; ast: Leader };
+  players: BoxLine[];
+};
+
+/** Arremesso de quadra, com a posição em % da quadra (comprimento × largura). */
+export type Shot = { n: number; period: number; clock: string; team_id: number; player_id: number | null; three: boolean; made: boolean; x: number; y: number };
+
+export type GameDetail = Game & {
+  periods: { period: number; home_points: number; away_points: number }[];
+  teams: { home: TeamSheet; away: TeamSheet };
+  shots: Shot[];
+};
+
 /** Relação de quem vê com o dono do perfil. */
 export type Friendship = "SELF" | "FRIENDS" | "SENT" | "RECEIVED" | "NONE";
 
