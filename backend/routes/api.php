@@ -7,6 +7,7 @@ use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\FantasyController;
 use App\Http\Controllers\FriendshipController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfileMediaController;
 use App\Http\Controllers\ShotCallController;
@@ -56,6 +57,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('friends', [FriendshipController::class, 'store'])->middleware('throttle:30,1');
     Route::post('friends/{user:handle}/accept', [FriendshipController::class, 'accept']);
     Route::delete('friends/{user:handle}', [FriendshipController::class, 'destroy']);
+
+    // Notificações (sininho)
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('notifications/read', [NotificationController::class, 'readAll']);
+    Route::post('notifications/{id}/read', [NotificationController::class, 'read'])->whereUuid('id');
 
     // Administração — admin tem acesso completo ao sistema e às configurações.
     Route::prefix('admin')->middleware('role:admin')->group(function () {

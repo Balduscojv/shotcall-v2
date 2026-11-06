@@ -294,3 +294,14 @@ export type FantasyTeamResponse = {
 
 export type MarketResponse = { data: MarketPlayer[]; meta: { round: FantasyRound; teams: Team[] } };
 
+/** Notificação do sininho (NotificationResource). */
+export type AppNotification = {
+  id: string;
+  kind: "friend_request" | "friend_accepted" | "award" | "round_settled" | (string & {});
+  title: string;
+  body: string;
+  url: string | null;
+  actor: { name: string; handle: string; avatar_url: string | null } | null;
+  read_at: string | null;
+  created_at: string;
+};

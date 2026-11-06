@@ -5,6 +5,7 @@ namespace App\Services\Cosmetics;
 use App\Enums\CosmeticSlot;
 use App\Models\Cosmetic;
 use App\Models\User;
+use App\Notifications\AwardUnlocked;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -26,7 +27,14 @@ class AwardService
             $cosmetic->id => ['unlocked_at' => now(), 'unlock_reason' => $reason, 'granted_by' => $grantedBy?->id],
         ]);
 
-        return $result['attached'] !== [];
+        $isNew = $result['attached'] !== [];
+
+        // Os de boas-vindas chegam junto com o cadastro: não precisam de aviso.
+        if ($isNew && $cosmetic->trigger !== Cosmetic::TRIGGER_SIGNUP) {
+            $user->notify(new AwardUnlocked($cosmetic, $reason));
+        }
+
+        return $isNew;
     }
 
     /**

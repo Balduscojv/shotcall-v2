@@ -6,8 +6,8 @@ use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,6 +27,12 @@ class User extends Authenticatable
         'role' => 'player',
     ];
 
+    /** As notificações são polimórficas (sem chave estrangeira): saem junto com o usuário. */
+    protected static function booted(): void
+    {
+        static::deleting(fn (User $user) => $user->notifications()->delete());
+    }
+
     protected function casts(): array
     {
         return [
@@ -36,13 +42,25 @@ class User extends Authenticatable
         ];
     }
 
-    public function isAdmin(): bool { return $this->role === UserRole::Admin; }
+    public function isAdmin(): bool
+    {
+        return $this->role === UserRole::Admin;
+    }
 
-    public function isModerator(): bool { return $this->role === UserRole::Moderator; }
+    public function isModerator(): bool
+    {
+        return $this->role === UserRole::Moderator;
+    }
 
-    public function shotCalls(): HasMany { return $this->hasMany(GameShotCall::class); }
+    public function shotCalls(): HasMany
+    {
+        return $this->hasMany(GameShotCall::class);
+    }
 
-    public function fantasyTeams(): HasMany { return $this->hasMany(FantasyTeam::class); }
+    public function fantasyTeams(): HasMany
+    {
+        return $this->hasMany(FantasyTeam::class);
+    }
 
     public function leagues(): BelongsToMany
     {
@@ -55,11 +73,20 @@ class User extends Authenticatable
         return $this->belongsToMany(Cosmetic::class, 'user_cosmetics')->withPivot('unlocked_at', 'unlock_reason', 'granted_by');
     }
 
-    public function equippedBanner(): BelongsTo { return $this->belongsTo(Cosmetic::class, 'equipped_banner_id'); }
+    public function equippedBanner(): BelongsTo
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_banner_id');
+    }
 
-    public function equippedFrame(): BelongsTo { return $this->belongsTo(Cosmetic::class, 'equipped_frame_id'); }
+    public function equippedFrame(): BelongsTo
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_frame_id');
+    }
 
-    public function equippedTitle(): BelongsTo { return $this->belongsTo(Cosmetic::class, 'equipped_title_id'); }
+    public function equippedTitle(): BelongsTo
+    {
+        return $this->belongsTo(Cosmetic::class, 'equipped_title_id');
+    }
 
     /** Carrega o que o usuário está usando, para mostrar moldura, título e banner sem N+1. */
     public function scopeWithEquipped(Builder $query): void

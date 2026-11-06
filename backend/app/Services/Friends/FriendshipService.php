@@ -4,8 +4,12 @@ namespace App\Services\Friends;
 
 use App\Models\Friendship;
 use App\Models\User;
+use App\Notifications\FriendRequestAccepted;
+use App\Notifications\FriendRequestReceived;
 use App\Services\Missions\SplashBrothersMission;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Validation\ValidationException;
 
 /** Regras de amizade: pedir, aceitar, desfazer e saber a relação entre duas pessoas. */
@@ -76,7 +80,10 @@ class FriendshipService
         $link = Friendship::between($from, $to)->first();
 
         if ($link === null) {
-            return Friendship::create(['requester_id' => $from->id, 'addressee_id' => $to->id]);
+            $link = Friendship::create(['requester_id' => $from->id, 'addressee_id' => $to->id]);
+            $to->notify(new FriendRequestReceived($from));
+
+            return $link;
         }
 
         if ($link->status === Friendship::PENDING && $link->addressee_id === $from->id) {
@@ -96,6 +103,10 @@ class FriendshipService
 
         $link->update(['status' => Friendship::ACCEPTED, 'accepted_at' => now()]);
 
+        // O aviso do pedido já foi resolvido; quem pediu fica sabendo que deu certo.
+        $this->requestNotices($user, $requester)->each->markAsRead();
+        $requester->notify(new FriendRequestAccepted($user));
+
         // O par pode já ter finalizado ligas juntos antes de virar amigo.
         $this->splashBrothers->checkPair($user, $requester);
 
@@ -106,6 +117,22 @@ class FriendshipService
     public function remove(User $user, User $other): void
     {
         Friendship::between($user, $other)->delete();
+
+        // Pedido cancelado ou recusado: o aviso some do sininho de quem recebeu.
+        $this->requestNotices($user, $other)->each->delete();
+        $this->requestNotices($other, $user)->each->delete();
+    }
+
+    /**
+     * Avisos de pedido de amizade que $from mandou para $to e $to ainda não leu.
+     *
+     * @return Collection<int, DatabaseNotification>
+     */
+    private function requestNotices(User $to, User $from): Collection
+    {
+        return $to->unreadNotifications()->where('type', FriendRequestReceived::KIND)->get()
+            ->filter(fn (DatabaseNotification $n) => ($n->data['actor']['id'] ?? null) === $from->id)
+            ->values();
     }
 
     /** Amigos aceitos de alguém, como consulta de usuários. */

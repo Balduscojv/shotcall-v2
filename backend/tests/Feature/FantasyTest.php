@@ -209,6 +209,14 @@ it('apura a rodada: pontos, valorização e o time segue para a próxima', funct
         ->and((float) $next->patrimony)->toBe(round(35 + $value, 2));
 
     $this->getJson('/api/fantasy/team')->assertJsonPath('data.round.number', 5)->assertJsonPath('data.team.patrimony', round(35 + $value, 2));
+
+    // A dona do time fica sabendo da apuração pelo sininho.
+    $this->getJson('/api/notifications')
+        ->assertJsonPath('meta.unread', 1)
+        ->assertJsonPath('data.0.kind', 'round_settled')
+        ->assertJsonPath('data.0.title', "Rodada {$this->r4->number} apurada")
+        ->assertJsonPath('data.0.url', '/time');
+    expect($this->getJson('/api/notifications')->json('data.0.body'))->toStartWith('Seu time fez 174,00 pontos.');
 });
 
 it('os acertos de palpite nos jogos da rodada viram boost nos pontos do time', function () {

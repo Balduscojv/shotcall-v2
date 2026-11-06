@@ -7,6 +7,7 @@ use App\Models\Game;
 use App\Models\PlayerPrice;
 use App\Models\PlayerRoundScore;
 use App\Models\Round;
+use App\Notifications\RoundSettled;
 use App\Services\ShotCalls\ShotCallService;
 use Illuminate\Support\Facades\DB;
 
@@ -107,5 +108,17 @@ class RoundSettlement
         if ($next && $next->fresh()->market_status === Round::UPCOMING) {
             $this->market->open($next);
         }
+
+        $this->notifyTeams($round);
+    }
+
+    /** Cada dono de time recebe quantos pontos fez. Fora da transação: só avisa o que já gravou. */
+    private function notifyTeams(Round $round): void
+    {
+        FantasyTeam::with('user')->where('round_id', $round->id)->each(
+            fn (FantasyTeam $team) => $team->user?->notify(
+                new RoundSettled($round->number, (float) $team->points, (float) $team->boost),
+            ),
+        );
     }
 }
