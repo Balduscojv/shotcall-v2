@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -312,7 +313,9 @@ export function TeamBuilder({
               <li key={p.id} className="flex items-center gap-3 border-b-2 border-surface px-3 py-2.5 last:border-0">
                 <span className="h-10 w-1.5 shrink-0 rounded-full" style={{ background: t ? teamAccent(t) : undefined }} aria-hidden="true" />
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-bold">{p.name}</span>
+                  <Link href={`/jogadores/${p.id}`} className="truncate font-bold text-chalk no-underline hover:text-cyan">
+                    {p.name}
+                  </Link>
                   <span className="text-xs text-subtle">
                     {t?.tricode} · {roleOf(p)} · média {p.average === null ? "—" : fpoints(p.average)} · {p.games_in_round} {p.games_in_round === 1 ? "jogo" : "jogos"} na rodada
                   </span>

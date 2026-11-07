@@ -267,3 +267,30 @@ it('o boost tem teto por rodada', function () {
     $boost = app(ShotCallBoost::class)->forUser($this->ana->id, $this->r4);
     expect($boost)->toMatchArray(['boost' => 0.3, 'raw' => 0.72, 'calls' => 12]);
 });
+
+it('a página do jogador mostra preço, histórico, jogos e próximos jogos', function () {
+    app(FantasyMarket::class)->open($this->r4);
+    PlayerGameStat::create(['game_id' => '401000900', 'player_id' => 1, 'team_id' => $this->bos->id, 'minutes' => '34:10', 'pts' => 30, 'reb' => 8, 'ast' => 7]);
+    $this->actingAs($this->ana);
+
+    $res = $this->getJson('/api/players/1')->assertOk()
+        ->assertJsonPath('data.name', 'Jogador 1')
+        ->assertJsonPath('data.role', 'PG')
+        ->assertJsonPath('data.team.tricode', 'BOS')
+        ->assertJsonPath('data.price', 20)
+        ->assertJsonPath('data.min_to_gain', 40)
+        ->assertJsonPath('data.games_in_round', 1)
+        ->assertJsonPath('data.season.games', 1)
+        ->assertJsonPath('data.season.average', 40)
+        ->assertJsonPath('data.price_history.0.round', 4)
+        ->assertJsonCount(1, 'data.games')
+        ->assertJsonPath('data.games.0.home', true)
+        ->assertJsonPath('data.games.0.opponent.tricode', 'LAL')
+        ->assertJsonPath('data.games.0.points', 40)
+        ->assertJsonPath('data.games.0.line.pts', 30)
+        ->assertJsonPath('data.upcoming.0.id', $this->monday->id);
+
+    // Calouro sem jogo: sem média.
+    $this->getJson('/api/players/3')->assertOk()->assertJsonPath('data.season.average', null)->assertJsonCount(0, 'data.games');
+    $this->getJson('/api/players/999')->assertNotFound();
+});

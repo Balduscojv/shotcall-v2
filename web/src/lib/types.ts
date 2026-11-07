@@ -443,3 +443,42 @@ export type Mission = {
   ends_at: string | null;
   rewards: (CosmeticLook & { key: string; name: string; slot: CosmeticSlot; active: boolean })[];
 };
+
+/** Linha do box score de um jogo do jogador. */
+export type PlayerGameLine = {
+  minutes: string | null;
+  pts: number; reb: number; ast: number; stl: number; blk: number; tov: number;
+  fgm: number; fga: number; fg3m: number; ftm: number; fta: number;
+  plus_minus: number;
+};
+
+/** Página do jogador (PlayerController@show). */
+export type PlayerDetail = {
+  id: number;
+  name: string;
+  position: FantasyPosition | null;
+  role: PlayerRole | null;
+  jersey: string | null;
+  active: boolean;
+  team: Team | null;
+  round: { id: number; number: number; status: FantasyRound["status"] } | null;
+  price: number | null;
+  variation: number | null;
+  min_to_gain: number | null;
+  games_in_round: number;
+  season: { games: number; average: number | null; best: number | null; total: number };
+  price_history: { round: number; price: number; variation: number }[];
+  games: {
+    id: string;
+    start_time: string;
+    home: boolean;
+    opponent: Team;
+    team_score: number;
+    opponent_score: number;
+    status: string;
+    points: number;
+    breakdown: Record<string, number>;
+    line: PlayerGameLine | null;
+  }[];
+  upcoming: { id: string; start_time: string; home: boolean; opponent: Team }[];
+};

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fmoney, fpoints, roleLabel, roleOf } from "@/lib/fantasy";
 import { teamAccent } from "@/lib/games";
 import type { FantasyRound, FantasyTeam } from "@/lib/types";
@@ -23,7 +24,9 @@ export function TeamLive({ team, round, multiplier }: { team: FantasyTeam; round
               <span className="h-11 w-1.5 shrink-0 rounded-full" style={{ background: p.team ? teamAccent(p.team) : undefined }} aria-hidden="true" />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex items-center gap-2 truncate font-bold">
-                  {p.name}
+                  <Link href={`/jogadores/${p.id}`} className="truncate text-chalk no-underline hover:text-cyan">
+                    {p.name}
+                  </Link>
                   {p.cestinha && (
                     <span className="flex items-center gap-1 rounded-md border-2 border-ink bg-yellow px-1 font-display text-[10px] text-ink" title={`Cestinha: pontua ${multiplier}x`}>
                       <Flame size={9} />
