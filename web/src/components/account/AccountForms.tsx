@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -29,6 +30,17 @@ function useSubmit() {
   const generic = error && Object.keys(error.errors).length === 0 ? error.message : null;
   return { error, pending, done, run, generic };
 }
+
+/** Quem entrou pelo Google não tem senha própria: cria uma pelo "esqueci a senha". */
+const googleHint = (
+  <>
+    Entrou com o Google e nunca criou senha?{" "}
+    <Link href="/esqueci-senha" className="font-bold text-cyan">
+      Crie uma aqui
+    </Link>
+    .
+  </>
+);
 
 function Saved({ children }: { children: ReactNode }) {
   return (
@@ -109,6 +121,7 @@ export function PasswordForm() {
         type="password"
         autoComplete="current-password"
         required
+        hint={googleHint}
         error={error?.field("current_password")}
       />
       <Field
@@ -171,6 +184,7 @@ export function DeleteAccount() {
             autoComplete="current-password"
             required
             autoFocus
+            hint={googleHint}
             error={error?.field("password") ?? error?.field("account")}
           />
           <div className="flex flex-wrap items-center gap-3">
