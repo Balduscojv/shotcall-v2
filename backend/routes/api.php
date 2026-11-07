@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\SocialLoginController;
 use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\FantasyController;
 use App\Http\Controllers\FriendshipController;
@@ -33,6 +34,13 @@ Route::prefix('auth')->group(function () {
         Route::get('verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->whereNumber('id')->name('verification.verify');
     });
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+    // Entrar com Google: navegação do navegador, com sessão (grupo 'web').
+    Route::get('providers', [SocialLoginController::class, 'providers']);
+    Route::middleware(['web', 'throttle:20,1'])->group(function () {
+        Route::get('google/redirect', [SocialLoginController::class, 'redirect']);
+        Route::get('google/callback', [SocialLoginController::class, 'callback']);
+    });
 });
 
 Route::middleware('auth:sanctum')->group(function () {

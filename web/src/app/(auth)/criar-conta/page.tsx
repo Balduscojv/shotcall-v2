@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 
 export const metadata: Metadata = { title: "Criar conta" };
@@ -10,6 +11,7 @@ export default function RegisterPage() {
         <h1 className="font-display text-4xl">CRIAR CONTA</h1>
         <p className="text-muted">Grátis. Você já entra na Liga Global e joga a rodada desta semana.</p>
       </div>
+      <GoogleButton label="Criar conta com Google" />
       <RegisterForm />
     </div>
   );

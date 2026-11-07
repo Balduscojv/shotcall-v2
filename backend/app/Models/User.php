@@ -57,6 +57,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === UserRole::Moderator;
     }
 
+    public function socialAccounts(): HasMany
+    {
+        return $this->hasMany(SocialAccount::class);
+    }
+
     public function shotCalls(): HasMany
     {
         return $this->hasMany(GameShotCall::class);

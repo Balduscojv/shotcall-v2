@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleButton } from "@/components/auth/GoogleButton";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -10,6 +11,7 @@ export default function LoginPage() {
         <h1 className="font-display text-4xl">ENTRAR</h1>
         <p className="text-muted">Volta pra quadra. Seus palpites estão esperando.</p>
       </div>
+      <GoogleButton label="Entrar com Google" />
       <LoginForm />
     </div>
   );

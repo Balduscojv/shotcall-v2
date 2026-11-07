@@ -37,6 +37,14 @@ return [
         'ca_bundle' => env('NBA_CA_BUNDLE'),
     ],
 
+    // Entrar com Google. Sem GOOGLE_CLIENT_ID o botão nem aparece. No Google Cloud, a URL de
+    // retorno autorizada é FRONTEND_URL/api/auth/google/callback (o Next repassa para cá).
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/').'/api/auth/google/callback',
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
