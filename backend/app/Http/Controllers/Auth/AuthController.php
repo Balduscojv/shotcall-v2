@@ -30,6 +30,9 @@ class AuthController extends Controller
             return $user->load(['equippedBanner', 'equippedFrame', 'equippedTitle']);
         });
 
+        // Confirmação de e-mail. Se o envio falhar, a conta fica criada e o link pode ser pedido de novo.
+        rescue(fn () => $user->sendEmailVerificationNotification());
+
         $this->endCurrentSession($request);
         Auth::guard('web')->login($user);
         $request->session()->regenerate();

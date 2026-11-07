@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\MissionController;
 use App\Http\Controllers\Admin\UserCosmeticController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\CosmeticController;
 use App\Http\Controllers\FantasyController;
 use App\Http\Controllers\FriendshipController;
@@ -25,6 +27,11 @@ Route::prefix('auth')->group(function () {
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
     });
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('forgot-password', [PasswordResetController::class, 'send']);
+        Route::post('reset-password', [PasswordResetController::class, 'reset']);
+        Route::get('verify-email/{id}/{hash}', [EmailVerificationController::class, 'verify'])->whereNumber('id')->name('verification.verify');
+    });
     Route::post('logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
@@ -35,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('me', [AccountController::class, 'update'])->middleware('throttle:20,1');
     Route::put('me/password', [AccountController::class, 'password'])->middleware('throttle:6,1');
     Route::delete('me', [AccountController::class, 'destroy'])->middleware('throttle:6,1');
+    Route::post('me/verification-email', [EmailVerificationController::class, 'resend'])->middleware('throttle:3,1');
 
     // Foto de perfil e banner
     Route::post('me/{kind}', [ProfileMediaController::class, 'update'])->whereIn('kind', ['avatar', 'banner'])->middleware('throttle:20,1');

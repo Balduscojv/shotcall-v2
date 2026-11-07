@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { AdminNavLink } from "@/components/admin/AdminNavLink";
 import { Logo } from "@/components/ui/Logo";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { VerifyEmailBanner } from "@/components/auth/VerifyEmailBanner";
 import { NotificationBell, NotificationBellStatic } from "@/components/notifications/NotificationBell";
 import { ProfileNavLink, ProfileNavLinkStatic } from "@/components/profile/ProfileNavLink";
 
@@ -41,6 +42,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </header>
+      <Suspense fallback={null}>
+        <VerifyEmailBanner />
+      </Suspense>
       <main className="mx-auto w-full max-w-[1240px] flex-1 pb-16 sm:px-6 sm:pt-6">{children}</main>
     </div>
   );

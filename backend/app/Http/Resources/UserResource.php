@@ -18,6 +18,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'handle' => $this->handle,
             'email' => $this->when($request->user()?->is($this->resource), $this->email),
+            'email_verified' => $this->when($request->user()?->is($this->resource), fn () => $this->email_verified_at !== null),
             // O papel só aparece para o próprio usuário e para admins.
             'role' => $this->when(
                 $request->user()?->is($this->resource) || $request->user()?->isAdmin(),

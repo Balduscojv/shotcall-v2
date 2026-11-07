@@ -7,6 +7,8 @@ export type User = {
   name: string;
   handle: string | null;
   email?: string;
+  /** Só vem para o próprio usuário. */
+  email_verified?: boolean;
   avatar_url: string | null;
   banner_url: string | null;
   /** Só vem para o próprio usuário e para admins. */

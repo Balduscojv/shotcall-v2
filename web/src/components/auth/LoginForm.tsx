@@ -56,6 +56,9 @@ export function LoginForm() {
         required
         error={error?.field("password")}
       />
+      <Link href="/esqueci-senha" className="-mt-3 self-end text-sm font-bold text-cyan underline-offset-4 hover:underline">
+        Esqueci a senha
+      </Link>
       <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-semibold text-muted">
         <input type="checkbox" name="remember" className="size-5 accent-lime" />
         Manter conectado neste computador
