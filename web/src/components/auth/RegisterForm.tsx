@@ -84,6 +84,17 @@ export function RegisterForm() {
       <button type="submit" disabled={pending} className={buttonClass("hype", "lg", "w-full text-lg")}>
         {pending ? "CRIANDO…" : "BORA JOGAR"}
       </button>
+      <p className="text-center text-xs text-subtle">
+        Ao criar a conta, você concorda com os{" "}
+        <Link href="/termos" className="text-subtle underline">
+          termos de uso
+        </Link>{" "}
+        e a{" "}
+        <Link href="/privacidade" className="text-subtle underline">
+          política de privacidade
+        </Link>
+        .
+      </p>
       <p className="text-center text-sm text-muted">
         Já tem conta?{" "}
         <Link href="/entrar" className="font-extrabold text-lime underline-offset-4 hover:underline">

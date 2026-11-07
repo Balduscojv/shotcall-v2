@@ -1,4 +1,5 @@
 import { Ball, Logo } from "@/components/ui/Logo";
+import { SiteFooter } from "@/components/ui/SiteFooter";
 
 /** Moldura das telas de entrar e criar conta: vitrine do jogo à esquerda, formulário à direita. */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           {children}
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter } from "@/components/ui/SiteFooter";
 import { Ball, Logo } from "@/components/ui/Logo";
 import { buttonClass } from "@/components/ui/button";
 
@@ -170,11 +171,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t-2 border-surface px-4 py-7 sm:px-6">
-        <div className="mx-auto flex max-w-[1240px] flex-wrap justify-between gap-4 text-[13px] text-subtle">
-          <span>ShotCall não é afiliado à NBA nem aos times. Fichas e cosméticos não têm valor em dinheiro.</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
