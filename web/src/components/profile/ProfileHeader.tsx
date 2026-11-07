@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { bannerLook } from "@/lib/cosmetics";
 import { getProfile } from "@/lib/profile";
 import { TrophyShelf } from "@/components/leagues/TrophyShelf";
@@ -61,7 +62,12 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
           )}
         </div>
         {own ? (
-          <ImageControl kind="avatar" hasImage={!!profile.avatar_url} />
+          <div className="flex flex-wrap items-center gap-2">
+            <ImageControl kind="avatar" hasImage={!!profile.avatar_url} />
+            <Link href="/configuracoes" className="text-sm font-bold text-cyan no-underline hover:text-lime">
+              Configurações
+            </Link>
+          </div>
         ) : (
           <FriendButton handle={profile.handle!} status={profile.friendship} />
         )}

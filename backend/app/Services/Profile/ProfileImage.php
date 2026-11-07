@@ -31,7 +31,7 @@ class ProfileImage
         $path = "{$kind}s/{$user->id}-".Str::random(10).'.webp';
         Storage::disk('public')->put($path, $bytes);
 
-        $this->forget($user, $kind);
+        $this->forgetFile($user, $kind);
         $user->forceFill([$this->column($kind) => '/storage/'.$path])->save();
 
         return $user;
@@ -60,7 +60,7 @@ class ProfileImage
 
     public function remove(User $user, string $kind): User
     {
-        $this->forget($user, $kind);
+        $this->forgetFile($user, $kind);
         $user->forceFill([$this->column($kind) => null])->save();
 
         return $user;
@@ -71,8 +71,8 @@ class ProfileImage
         return $kind === self::AVATAR ? 'avatar_url' : 'banner_url';
     }
 
-    /** Apaga o arquivo anterior, se foi enviado por aqui (avatar de login social fica de fora). */
-    private function forget(User $user, string $kind): void
+    /** Apaga o arquivo atual, se foi enviado por aqui (avatar de login social fica de fora). */
+    public function forgetFile(User $user, string $kind): void
     {
         $current = $user->{$this->column($kind)};
         if ($current && str_starts_with($current, '/storage/')) {

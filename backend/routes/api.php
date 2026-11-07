@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\CosmeticCatalogController;
 use App\Http\Controllers\Admin\MissionController;
 use App\Http\Controllers\Admin\UserCosmeticController;
@@ -29,6 +30,11 @@ Route::prefix('auth')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('me', [AuthController::class, 'me']);
+
+    // Configurações da conta
+    Route::patch('me', [AccountController::class, 'update'])->middleware('throttle:20,1');
+    Route::put('me/password', [AccountController::class, 'password'])->middleware('throttle:6,1');
+    Route::delete('me', [AccountController::class, 'destroy'])->middleware('throttle:6,1');
 
     // Foto de perfil e banner
     Route::post('me/{kind}', [ProfileMediaController::class, 'update'])->whereIn('kind', ['avatar', 'banner'])->middleware('throttle:20,1');
