@@ -1,0 +1,84 @@
+# Render Free keeps the API, queue worker, and scheduler in one web service.
+# They suspend together when the service is idle. Migrations stay out of startup;
+# Render pre-deploy commands require a paid web-service plan.
+services:
+  - type: web
+    name: shotcall-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile.production
+    dockerContext: ./backend
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: ShotCall
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://shotcall-api.onrender.com
+      - key: FRONTEND_URL
+        value: https://shotcall-web.onrender.com
+      - key: SANCTUM_STATEFUL_DOMAINS
+        value: shotcall-web.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_SSLMODE
+        value: require
+      - key: DB_URL
+        sync: false
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_COOKIE
+        value: shotcall_session
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: LOCAL_FILESYSTEM_SERVE
+        value: "false"
+      - key: QUEUE_CONNECTION
+        value: redis
+      - key: CACHE_STORE
+        value: redis
+      - key: REDIS_CLIENT
+        value: phpredis
+      # Use the Upstash TLS URL (rediss://default:...@...:6379).
+      - key: REDIS_URL
+        sync: false
+      - key: PUBLIC_FILESYSTEM_DRIVER
+        value: s3
+      - key: AWS_DEFAULT_REGION
+        value: auto
+      - key: AWS_USE_PATH_STYLE_ENDPOINT
+        value: "true"
+      # R2 S3 credentials, endpoint, and the bucket's public URL/custom domain.
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_BUCKET
+        sync: false
+      - key: AWS_ENDPOINT
+        sync: false
+      - key: AWS_URL
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+
+  - type: web
+    name: shotcall-web
+    runtime: node
+    plan: free
+    rootDir: ./web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_URL
+        value: https://shotcall-api.onrender.com

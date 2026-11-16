@@ -1,0 +1,38 @@
+FROM php:8.4-fpm-bookworm
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nginx supervisor gettext-base ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/download/2.7.34/install-php-extensions /usr/local/bin/
+RUN install-php-extensions pdo_pgsql pgsql intl gd zip bcmath pcntl redis
+
+RUN { \
+      echo 'upload_max_filesize=16M'; \
+      echo 'post_max_size=20M'; \
+      echo 'memory_limit=256M'; \
+    } > /usr/local/etc/php/conf.d/shotcall.ini
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+COPY . .
+
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress \
+    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/public bootstrap/cache \
+    && ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R ug+rwX storage bootstrap/cache
+
+COPY docker/production/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY docker/production/php-fpm-pool.conf /usr/local/etc/php-fpm.d/zz-shotcall.conf
+COPY docker/production/supervisord.conf /etc/supervisor/conf.d/shotcall.conf
+COPY docker/production/entrypoint.sh /usr/local/bin/shotcall-production-entrypoint
+
+RUN rm -f /etc/nginx/sites-enabled/default \
+    && sed -i 's/\r$//' /usr/local/bin/shotcall-production-entrypoint \
+    && chmod +x /usr/local/bin/shotcall-production-entrypoint
+
+EXPOSE 10000
+
+CMD ["/usr/local/bin/shotcall-production-entrypoint"]

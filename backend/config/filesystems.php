@@ -33,15 +33,23 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            'serve' => env('LOCAL_FILESYSTEM_SERVE', true),
             'throw' => false,
             'report' => false,
         ],
 
         'public' => [
-            'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'driver' => env('PUBLIC_FILESYSTEM_DRIVER', 'local'),
+            'root' => env('PUBLIC_FILESYSTEM_DRIVER') === 's3' ? '' : storage_path('app/public'),
+            'url' => env('PUBLIC_FILESYSTEM_DRIVER') === 's3'
+                ? env('AWS_URL')
+                : rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
