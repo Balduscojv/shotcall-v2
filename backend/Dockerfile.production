@@ -29,9 +29,13 @@ ENV HOME=/var/www
 
 WORKDIR /var/www/html
 
-# Dependências antes do código: mudança só no código reaproveita esta camada no build.
+# Dependências antes do código: mudança só no código reaproveita esta camada no build. Na mesma
+# camada (apagar depois não diminui a imagem): tira os serviços do SDK da AWS que não usamos (só o
+# S3, para o R2; extra.aws/aws-sdk-php no composer.json) e o cache do Composer.
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts --no-autoloader
+RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts --no-autoloader \
+    && composer run-script pre-autoload-dump --no-interaction \
+    && composer clear-cache --no-interaction
 
 COPY . .
 
