@@ -28,6 +28,8 @@ services:
         value: pgsql
       - key: DB_SSLMODE
         value: require
+      # Use a URL DIRETA do Neon (host sem "-pooler"). O endpoint pooled quebra
+      # transações com mais de um comando (migrations e a própria app).
       - key: DB_URL
         sync: false
       - key: SESSION_DRIVER
@@ -47,6 +49,11 @@ services:
       # Use the Upstash TLS URL (rediss://default:...@...:6379).
       - key: REDIS_URL
         sync: false
+      # O Upstash só tem o banco 0; o Laravel usa o 1 para cache por padrão.
+      - key: REDIS_DB
+        value: "0"
+      - key: REDIS_CACHE_DB
+        value: "0"
       - key: PUBLIC_FILESYSTEM_DRIVER
         value: s3
       - key: AWS_DEFAULT_REGION

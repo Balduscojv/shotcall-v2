@@ -15,6 +15,10 @@ RUN { \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# A fila e o agendador rodam como www-data; com HOME=/root o libpq tenta ler
+# /root/.postgresql/postgresql.crt e a conexão SSL com o Neon falha com "Permission denied".
+ENV HOME=/var/www
+
 WORKDIR /var/www/html
 COPY . .
 
