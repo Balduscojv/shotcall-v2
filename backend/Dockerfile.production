@@ -39,12 +39,13 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-
 
 COPY . .
 
-# Rotas, views e eventos não dependem do ambiente: cacheados aqui, e não a cada boot (a API dorme
-# no Render Free e cada segundo do boot é espera de quem está entrando). A config depende das
-# variáveis de ambiente e continua sendo cacheada no entrypoint.
+# Views e eventos não dependem do ambiente: cacheados aqui, e não a cada boot (a API dorme no
+# Render Free e cada segundo do boot é espera de quem está entrando). Config e ROTAS dependem das
+# variáveis de ambiente e são cacheadas no entrypoint: com route:cache aqui, sem
+# LOCAL_FILESYSTEM_SERVE=false, a rota de arquivos locais do Laravel tomava /storage e as imagens
+# do R2 davam 404.
 RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction \
     && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/public bootstrap/cache \
-    && APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan route:cache \
     && APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan view:cache \
     && APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan event:cache \
     && ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage \
