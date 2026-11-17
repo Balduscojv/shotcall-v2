@@ -33,4 +33,9 @@ class Round extends Model
     {
         return static::where('season_id', $this->season_id)->where('number', $this->number + 1)->first();
     }
+
+    public function previous(): ?self
+    {
+        return static::where('season_id', $this->season_id)->where('number', $this->number - 1)->first();
+    }
 }

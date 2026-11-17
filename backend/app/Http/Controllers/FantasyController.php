@@ -56,11 +56,22 @@ class FantasyController extends Controller
         $round = $this->market->currentRound() ?? abort(404, 'Nenhuma rodada no calendário.');
         $team = $this->teams->teamFor($request->user(), $round);
 
+        // Mercado aberto antes da hora: a rodada anterior ainda está rolando; vão as parciais dela.
+        $previous = null;
+        if ($this->market->hasProvisionalPrices($round)) {
+            $prevRound = $round->previous();
+            $prevTeam = $this->teams->teamFor($request->user(), $prevRound);
+            $previous = ['round' => $this->roundInfo($prevRound), 'team' => $prevTeam ? $this->teamView($prevTeam, $prevRound) : null];
+        }
+
         return response()->json(['data' => [
             'round' => $this->roundInfo($round),
             'starting_balance' => (float) config('fantasy.starting_balance'),
+            // Sem time salvo: o orçamento com que dá para escalar (provisório, se for o caso).
+            'patrimony' => $this->teams->patrimonyFor($request->user(), $round),
             'cestinha_multiplier' => (float) config('fantasy.cestinha_multiplier'),
             'team' => $team ? $this->teamView($team, $round) : null,
+            'previous' => $previous,
         ]]);
     }
 
@@ -93,6 +104,7 @@ class FantasyController extends Controller
             'starts_at' => $round->starts_at->toIso8601String(),
             'ends_at' => $round->ends_at->toIso8601String(),
             'lock_at' => $this->market->lockAt($round)?->toIso8601String(),
+            'provisional_prices' => $this->market->hasProvisionalPrices($round),
         ];
     }
 

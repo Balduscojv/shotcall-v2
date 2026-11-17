@@ -5,6 +5,9 @@ return [
 
     'starting_balance' => 100.0,
 
+    // O mercado fecha estes minutos antes do primeiro jogo da rodada.
+    'lock_minutes_before' => 10,
+
     // Titulares: um de cada posição (armador, ala-armador, ala, ala-pivô, pivô). Sem banco.
     'lineup' => ['PG' => 1, 'SG' => 1, 'SF' => 1, 'PF' => 1, 'C' => 1],
 

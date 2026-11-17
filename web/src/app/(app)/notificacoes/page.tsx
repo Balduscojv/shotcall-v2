@@ -79,6 +79,7 @@ function NotificationRow({ notification: n }: { notification: AppNotification })
 const kindStyle: Record<string, string> = {
   award: "bg-yellow",
   round_settled: "bg-lime",
+  lineup_over_budget: "bg-pink",
 };
 
 /** Ícone quando a notificação não tem uma pessoa por trás (prêmio, rodada). */

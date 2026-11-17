@@ -25,6 +25,7 @@ class FantasyTeamService
     public function __construct(
         private LineupValidator $validator,
         private GameScoring $scoring,
+        private FantasyMarket $market,
     ) {}
 
     public function teamFor(User $user, Round $round): ?FantasyTeam
@@ -32,12 +33,23 @@ class FantasyTeamService
         return FantasyTeam::with('players')->where('user_id', $user->id)->where('round_id', $round->id)->first();
     }
 
-    /** Patrimônio para escalar nesta rodada: o do time (se já tem) ou o inicial. */
+    /**
+     * Patrimônio para escalar nesta rodada: o do time (se já tem). Com a rodada anterior ainda sem
+     * apuração (mercado aberto antes da hora), vale o patrimônio do time dela, provisório até a
+     * apuração recalcular com os preços novos. Sem time nenhum, o inicial.
+     */
     public function patrimonyFor(User $user, Round $round): float
     {
-        $team = $this->teamFor($user, $round);
+        if ($team = $this->teamFor($user, $round)) {
+            return (float) $team->patrimony;
+        }
 
-        return $team ? (float) $team->patrimony : (float) config('fantasy.starting_balance');
+        $previous = $round->previous();
+        if ($previous && $previous->market_status !== Round::SETTLED && ($prev = $this->teamFor($user, $previous))) {
+            return (float) $prev->patrimony;
+        }
+
+        return (float) config('fantasy.starting_balance');
     }
 
     /**
@@ -60,7 +72,7 @@ class FantasyTeamService
             // A escalação exige uma de cada posição detalhada (config fantasy.lineup).
             $lineup = array_map(fn ($id) => ['id' => $id, 'position' => $players[$id]->fantasyRole(), 'price' => (float) $prices[$id]], $playerIds);
             $patrimony = $this->patrimonyFor($user, $round);
-            $errors = $this->validator->validate($lineup, $cestinhaId, $patrimony, $round->isMarketOpen());
+            $errors = $this->validator->validate($lineup, $cestinhaId, $patrimony, $this->market->isOpen($round));
             if ($errors) {
                 throw ValidationException::withMessages(['players' => array_map(
                     fn ($code) => $this->message($code, $lineup, $patrimony),
@@ -133,7 +145,7 @@ class FantasyTeamService
         $money = fn (float $v) => 'F$ '.number_format($v, 2, ',', '.');
 
         return match (true) {
-            $code === 'market_closed' => 'O mercado está fechado: a rodada já começou.',
+            $code === 'market_closed' => 'O mercado está fechado: a rodada já vai começar.',
             $code === 'duplicate_player' => 'Tem jogador repetido na escalação.',
             $code === 'cestinha_not_in_lineup' => 'Escolha o cestinha entre os 5 escalados.',
             $code === 'insufficient_balance' => 'Patrimônio insuficiente: o time custa '.$money(array_sum(array_column($lineup, 'price'))).' e você tem '.$money($patrimony).'.',

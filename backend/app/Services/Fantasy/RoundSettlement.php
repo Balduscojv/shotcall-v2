@@ -7,11 +7,14 @@ use App\Models\Game;
 use App\Models\PlayerPrice;
 use App\Models\PlayerRoundScore;
 use App\Models\Round;
+use App\Models\User;
+use App\Notifications\LineupOverBudget;
 use App\Notifications\RoundSettled;
 use App\Services\Leagues\LeagueRanking;
 use App\Services\Leagues\LeagueSeasonCloser;
 use App\Services\Missions\MissionRunner;
 use App\Services\ShotCalls\ShotCallService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -61,6 +64,44 @@ class RoundSettlement
             });
     }
 
+    /**
+     * Times da próxima rodada montados antes desta apuração (mercado aberto antes da hora, com os
+     * preços desta rodada como provisórios): passam a valer os preços novos. O patrimônio é o mesmo
+     * de quem só segue com o time (saldo + valor novo do time desta rodada); quem não tinha time
+     * nesta rodada mantém o patrimônio. Estourou o orçamento: continua salvo e a pessoa é avisada.
+     *
+     * @param  Collection<int, float>  $newPrices
+     * @return list<array{0: User, 1: float, 2: float}> quem ficou com saldo negativo
+     */
+    private function repriceNextTeams(Round $round, Round $next, Collection $newPrices): array
+    {
+        $prices = PlayerPrice::where('round_id', $next->id)->pluck('price', 'player_id')->map(fn ($p) => (float) $p);
+        $overBudget = [];
+
+        FantasyTeam::with(['players', 'user'])->where('round_id', $next->id)->get()->each(function (FantasyTeam $team) use ($round, $prices, $newPrices, &$overBudget) {
+            $previous = FantasyTeam::with('players')->where('user_id', $team->user_id)->where('round_id', $round->id)->first();
+            $patrimony = $previous
+                ? round((float) $previous->balance + $previous->players->sum(fn ($p) => $newPrices[$p->player_id] ?? (float) $p->bought_at_price), 2)
+                : (float) $team->patrimony;
+
+            // fantasy_team_players não tem chave primária: atualiza pela consulta.
+            $cost = 0.0;
+            foreach ($team->players as $slot) {
+                $price = $prices[$slot->player_id] ?? (float) $slot->bought_at_price;
+                $team->players()->where('player_id', $slot->player_id)->update(['bought_at_price' => $price]);
+                $cost += $price;
+            }
+            $cost = round($cost, 2);
+            $team->update(['patrimony' => $patrimony, 'balance' => round($patrimony - $cost, 2)]);
+
+            if ($cost > $patrimony && $team->user) {
+                $overBudget[] = [$team->user, $cost, $patrimony];
+            }
+        });
+
+        return $overBudget;
+    }
+
     public function settle(Round $round): void
     {
         if ($round->market_status !== Round::LOCKED) {
@@ -69,8 +110,9 @@ class RoundSettlement
         $round->update(['market_status' => Round::SETTLING]);
         $next = $round->next();
         $this->finishPendingGames($round);
+        $overBudget = [];
 
-        DB::transaction(function () use ($round, $next) {
+        DB::transaction(function () use ($round, $next, &$overBudget) {
             $scores = PlayerRoundScore::where('round_id', $round->id)->get()->keyBy('player_id');
 
             // Preços da próxima rodada.
@@ -109,8 +151,16 @@ class RoundSettlement
                 ])->all());
             });
 
+            if ($next) {
+                $overBudget = $this->repriceNextTeams($round, $next, $newPrices);
+            }
+
             $round->update(['market_status' => Round::SETTLED]);
         });
+
+        foreach ($overBudget as [$user, $cost, $patrimony]) {
+            $user->notify(new LineupOverBudget($next->number, $cost, $patrimony));
+        }
 
         if ($next && $next->fresh()->market_status === Round::UPCOMING) {
             $this->market->open($next);

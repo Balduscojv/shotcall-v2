@@ -318,8 +318,10 @@ export type FantasyRound = {
   status: "UPCOMING" | "OPEN" | "LOCKED" | "SETTLING" | "SETTLED";
   starts_at: string;
   ends_at: string;
-  /** Primeiro jogo da rodada: quando o mercado fecha. */
+  /** Quando o mercado fecha: alguns minutos antes do primeiro jogo da rodada. */
   lock_at: string | null;
+  /** Mercado aberto antes da apuração da rodada anterior: os preços mudam quando ela for apurada. */
+  provisional_prices: boolean;
 };
 
 /** Vaga na quadra: uma por posição detalhada. */
@@ -386,7 +388,16 @@ export type FantasyTeam = {
 };
 
 export type FantasyTeamResponse = {
-  data: { round: FantasyRound; starting_balance: number; cestinha_multiplier: number; team: FantasyTeam | null };
+  data: {
+    round: FantasyRound;
+    starting_balance: number;
+    /** Orçamento para escalar sem time salvo (provisório se os preços forem). */
+    patrimony: number;
+    cestinha_multiplier: number;
+    team: FantasyTeam | null;
+    /** Rodada anterior ainda rolando enquanto o mercado desta já abriu: as parciais dela. */
+    previous: { round: FantasyRound; team: FantasyTeam | null } | null;
+  };
 };
 
 export type MarketResponse = { data: MarketPlayer[]; meta: { round: FantasyRound; teams: Team[] } };
@@ -394,7 +405,7 @@ export type MarketResponse = { data: MarketPlayer[]; meta: { round: FantasyRound
 /** Notificação do sininho (NotificationResource). */
 export type AppNotification = {
   id: string;
-  kind: "friend_request" | "friend_accepted" | "award" | "round_settled" | (string & {});
+  kind: "friend_request" | "friend_accepted" | "award" | "round_settled" | "lineup_over_budget" | (string & {});
   title: string;
   body: string;
   url: string | null;
