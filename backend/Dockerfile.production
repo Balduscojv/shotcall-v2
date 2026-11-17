@@ -5,13 +5,21 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/download/2.7.34/install-php-extensions /usr/local/bin/
-RUN install-php-extensions pdo_pgsql pgsql intl gd zip bcmath pcntl redis
+RUN install-php-extensions pdo_pgsql pgsql intl gd zip bcmath pcntl redis opcache
 
+# OPcache: o código não muda dentro da imagem, então não precisa conferir os arquivos a cada requisição.
 RUN { \
       echo 'upload_max_filesize=16M'; \
       echo 'post_max_size=20M'; \
       echo 'memory_limit=256M'; \
-    } > /usr/local/etc/php/conf.d/shotcall.ini
+    } > /usr/local/etc/php/conf.d/shotcall.ini \
+    && { \
+      echo 'opcache.enable=1'; \
+      echo 'opcache.validate_timestamps=0'; \
+      echo 'opcache.memory_consumption=96'; \
+      echo 'opcache.interned_strings_buffer=16'; \
+      echo 'opcache.max_accelerated_files=20000'; \
+    } > /usr/local/etc/php/conf.d/zz-opcache.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -20,10 +28,21 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 ENV HOME=/var/www
 
 WORKDIR /var/www/html
+
+# Dependências antes do código: mudança só no código reaproveita esta camada no build.
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-scripts --no-autoloader
+
 COPY . .
 
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-progress \
+# Rotas, views e eventos não dependem do ambiente: cacheados aqui, e não a cada boot (a API dorme
+# no Render Free e cada segundo do boot é espera de quem está entrando). A config depende das
+# variáveis de ambiente e continua sendo cacheada no entrypoint.
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction \
     && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs storage/app/public bootstrap/cache \
+    && APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan route:cache \
+    && APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan view:cache \
+    && APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= php artisan event:cache \
     && ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage \
     && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache
