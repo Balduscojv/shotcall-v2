@@ -1,5 +1,6 @@
 import { teamAccent } from "@/lib/games";
 import type { GameDetail, Team, TeamSheet } from "@/lib/types";
+import { TeamLogo } from "@/components/nba/TeamLogo";
 
 type Totals = TeamSheet["totals"];
 
@@ -30,7 +31,7 @@ const rows: Row[] = [
 function TeamTag({ team, align }: { team: Team; align: "left" | "right" }) {
   return (
     <span className={`flex items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
-      <span className="size-3.5 rounded-sm border-2 border-ink" style={{ background: teamAccent(team) }} aria-hidden="true" />
+      <TeamLogo team={team} size={22} />
       <span className="font-display text-sm">{team.tricode}</span>
     </span>
   );

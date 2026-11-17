@@ -8,6 +8,8 @@ import { fmoney, fpoints, fvariation, roleLabel, roleOf, slots } from "@/lib/fan
 import { onTeamAccent, teamAccent } from "@/lib/games";
 import type { FantasySlot, FantasyTeam, MarketPlayer, Team } from "@/lib/types";
 import { buttonClass } from "@/components/ui/button";
+import { PlayerPhoto } from "@/components/nba/PlayerPhoto";
+import { TeamLogo } from "@/components/nba/TeamLogo";
 import { BoostCard } from "./BoostCard";
 import { Flame, OnFire } from "./Flame";
 
@@ -162,7 +164,12 @@ export function TeamBuilder({
                   } ${p ? "border-ink text-chalk" : "border-dashed border-chalk/60 bg-ink/40 text-chalk/80"} ${isC ? "animate-on-fire" : ""}`}
                   style={p && t ? { background: teamAccent(t), color: onTeamAccent(t) } : undefined}
                 >
-                  {p ? t?.tricode : "+"}
+                  {p ? <PlayerPhoto id={p.id} name={p.name} team={t} size={64} fill /> : "+"}
+                  {p && t && (
+                    <span className="absolute -right-1.5 -bottom-1 flex size-6 items-center justify-center rounded-full border-2 border-ink bg-chalk">
+                      <TeamLogo team={t} size={16} />
+                    </span>
+                  )}
                   {isC && <OnFire />}
                 </button>
                 <span className={`max-w-full truncate rounded-md px-1.5 py-0.5 text-[11px] font-extrabold sm:text-xs ${isC ? "bg-yellow text-ink" : "bg-ink text-chalk"}`}>
@@ -311,7 +318,7 @@ export function TeamBuilder({
             const afford = p.price - (draft[slot]?.price ?? 0) <= balance;
             return (
               <li key={p.id} className="flex items-center gap-3 border-b-2 border-surface px-3 py-2.5 last:border-0">
-                <span className="h-10 w-1.5 shrink-0 rounded-full" style={{ background: t ? teamAccent(t) : undefined }} aria-hidden="true" />
+                <PlayerPhoto id={p.id} name={p.name} team={t} size={44} />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <Link href={`/jogadores/${p.id}`} className="truncate font-bold text-chalk no-underline hover:text-cyan">
                     {p.name}

@@ -9,6 +9,7 @@ import { LeadersPanel } from "@/components/games/LeadersPanel";
 import { ShotChart } from "@/components/games/ShotChart";
 import { ShotCallPanel } from "@/components/shotcalls/ShotCallPanel";
 import { TeamDuel } from "@/components/games/TeamDuel";
+import { TeamLogo } from "@/components/nba/TeamLogo";
 import { TabSkeleton } from "@/components/profile/TabStates";
 
 export const metadata = { title: "Jogo" };
@@ -47,10 +48,13 @@ async function GameView({ params }: Pick<PageProps<"/jogos/[id]">, "params">) {
   );
 
   const teamName = (team: Team) => (
-    <span className="flex flex-col">
-      <span className="font-display text-xl leading-none drop-shadow-[2px_2px_0_var(--color-ink)] sm:text-2xl">{team.tricode}</span>
-      <span className="text-xs font-bold text-chalk/85 sm:text-sm">
-        {team.city} {team.name}
+    <span className="flex items-center gap-2.5">
+      <TeamLogo team={team} size={48} />
+      <span className="flex flex-col">
+        <span className="font-display text-xl leading-none drop-shadow-[2px_2px_0_var(--color-ink)] sm:text-2xl">{team.tricode}</span>
+        <span className="text-xs font-bold text-chalk/85 sm:text-sm">
+          {team.city} {team.name}
+        </span>
       </span>
     </span>
   );

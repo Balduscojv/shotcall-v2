@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { hasScore, leader, matchupGradient, statusLine } from "@/lib/games";
 import type { Game } from "@/lib/types";
+import { TeamLogo } from "@/components/nba/TeamLogo";
 import { LiveBadge } from "./LiveBadge";
 
 /** Situação do meu palpite no rodapé do card. */
@@ -30,7 +31,10 @@ export function GameCard({ game, nbaDay }: { game: Game; nbaDay: string }) {
     const score = which === "home" ? game.home_score : game.away_score;
     return (
       <div className={`flex min-w-0 flex-col gap-0.5 ${which === "home" ? "items-end text-right" : "items-start"}`}>
-        <span className="font-display text-xl leading-none drop-shadow-[2px_2px_0_var(--color-ink)]">{team.tricode}</span>
+        <span className={`flex items-center gap-2 ${which === "home" ? "flex-row-reverse" : ""}`}>
+          <TeamLogo team={team} size={34} />
+          <span className="font-display text-xl leading-none drop-shadow-[2px_2px_0_var(--color-ink)]">{team.tricode}</span>
+        </span>
         <span className="truncate text-xs font-bold text-chalk/85">{team.name}</span>
         {scored && (
           <span

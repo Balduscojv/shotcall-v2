@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { fmoney, fpoints, roleLabel, roleOf } from "@/lib/fantasy";
-import { teamAccent } from "@/lib/games";
 import type { FantasyRound, FantasyTeam } from "@/lib/types";
+import { PlayerPhoto } from "@/components/nba/PlayerPhoto";
 import { LiveBadge } from "@/components/games/LiveBadge";
 import { BoostCard } from "./BoostCard";
 import { Flame } from "./Flame";
@@ -21,7 +21,7 @@ export function TeamLive({ team, round, multiplier }: { team: FantasyTeam; round
         <ul className="flex flex-col overflow-hidden rounded-2xl border-[3px] border-ink bg-panel shadow-hard">
           {team.players.map((p) => (
             <li key={p.id} className={`flex items-center gap-3 border-b-2 border-surface px-4 py-3 last:border-0 ${p.cestinha ? "bg-yellow/10" : ""}`}>
-              <span className="h-11 w-1.5 shrink-0 rounded-full" style={{ background: p.team ? teamAccent(p.team) : undefined }} aria-hidden="true" />
+              <PlayerPhoto id={p.id} name={p.name} team={p.team} size={48} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="flex items-center gap-2 truncate font-bold">
                   <Link href={`/jogadores/${p.id}`} className="truncate text-chalk no-underline hover:text-cyan">

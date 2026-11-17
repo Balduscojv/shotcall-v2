@@ -5,6 +5,8 @@ import { fmoney, fpoints, fvariation, roleLabel } from "@/lib/fantasy";
 import { onTeamAccent, teamAccent } from "@/lib/games";
 import type { PlayerDetail } from "@/lib/types";
 import { EmptyState, TabSkeleton } from "@/components/profile/TabStates";
+import { PlayerPhoto } from "@/components/nba/PlayerPhoto";
+import { TeamLogo } from "@/components/nba/TeamLogo";
 
 export const metadata = { title: "Jogador" };
 
@@ -63,13 +65,23 @@ async function PlayerView({ params }: Pick<PageProps<"/jogadores/[id]">, "params
         style={{ background: accent, color: p.team ? onTeamAccent(p.team) : undefined }}
       >
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-extrabold opacity-85">
-              {p.team ? `${p.team.city} ${p.team.name}` : "Sem time"}
-              {p.jersey && ` · #${p.jersey}`}
+          <div className="flex items-end gap-4">
+            <span className="relative shrink-0">
+              <PlayerPhoto id={p.id} name={p.name} team={p.team} size={96} className="border-[3px] shadow-hard-sm" />
+              {p.team && (
+                <span className="absolute -right-2 -bottom-1 flex size-9 items-center justify-center rounded-full border-2 border-ink bg-chalk">
+                  <TeamLogo team={p.team} size={26} />
+                </span>
+              )}
             </span>
-            <h1 className="font-display text-3xl leading-none sm:text-4xl">{p.name}</h1>
-            <span className="text-sm font-bold opacity-85">{p.role ? `${roleLabel[p.role]} (${p.role})` : "Posição indefinida"}</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-extrabold opacity-85">
+                {p.team ? `${p.team.city} ${p.team.name}` : "Sem time"}
+                {p.jersey && ` · #${p.jersey}`}
+              </span>
+              <h1 className="font-display text-3xl leading-none sm:text-4xl">{p.name}</h1>
+              <span className="text-sm font-bold opacity-85">{p.role ? `${roleLabel[p.role]} (${p.role})` : "Posição indefinida"}</span>
+            </div>
           </div>
           {!p.active && (
             <span className="rotate-3 rounded-lg border-2 border-ink bg-pink px-2.5 py-1 text-xs font-extrabold text-ink shadow-hard-sm">INATIVO</span>
