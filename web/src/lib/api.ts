@@ -23,11 +23,11 @@ function readCookie(name: string): string | undefined {
   return match ? decodeURIComponent(match.slice(name.length + 1)) : undefined;
 }
 
-// No plano grátis do Render a API dorme sem uso e leva 1–2 min para acordar. Enquanto isso o
+// No plano grátis do Render a API dorme sem uso e leva 1–3 min para acordar. Enquanto isso o
 // Render responde 502/503/504 sem a requisição chegar ao Laravel, então repetir é seguro.
 const WAKING_STATUS = new Set([502, 503, 504]);
-// ~2,5 min no total.
-const WAKING_DELAYS_MS = [2_000, 4_000, 6_000, 8_000, 10_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000];
+// ~3,5 min no total, sem contar o tempo de cada tentativa.
+const WAKING_DELAYS_MS = [2_000, 4_000, 6_000, 8_000, 10_000, ...Array<number>(12).fill(15_000)];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

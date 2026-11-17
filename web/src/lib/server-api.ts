@@ -6,6 +6,34 @@ const API_URL = process.env.API_URL ?? "http://localhost:8000";
 const APP_URL = process.env.APP_URL ?? "http://localhost:3000";
 export const SESSION_COOKIE = "shotcall_session";
 
+// No Render Free a API dorme e, enquanto acorda (1–3 min), responde 502/503/504 ou derruba a
+// conexão sem a requisição chegar ao Laravel. Nos dois casos repetir é seguro (só GET passa aqui).
+const WAKING_STATUS = new Set([502, 503, 504]);
+const WAKING_BUDGET_MS = 3.5 * 60_000;
+const ATTEMPT_TIMEOUT_MS = 100_000;
+const WAKING_DELAYS_MS = [2_000, 4_000, 8_000, 15_000];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** fetch que espera a API acordar. Esgotado o tempo, devolve a última resposta ou lança o último erro. */
+async function fetchWaking(url: string, init: RequestInit): Promise<Response> {
+  const deadline = performance.now() + WAKING_BUDGET_MS;
+  for (let attempt = 0; ; attempt++) {
+    const delay = WAKING_DELAYS_MS[Math.min(attempt, WAKING_DELAYS_MS.length - 1)];
+    const last = performance.now() + delay >= deadline;
+    try {
+      const timeout = Math.max(5_000, Math.min(ATTEMPT_TIMEOUT_MS, deadline - performance.now()));
+      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeout) });
+      if (last || !WAKING_STATUS.has(res.status)) return res;
+      // Lê o corpo antes de repetir: resposta abandonada com "Connection: close" derruba o parser do fetch do Node.
+      await res.text().catch(() => "");
+    } catch (e) {
+      if (last || performance.now() + delay >= deadline) throw e;
+    }
+    await sleep(delay);
+  }
+}
+
 /**
  * Chamada ao Laravel a partir do servidor do Next, levando a sessão do navegador.
  * Lê a requisição: quem chama precisa estar dentro de um <Suspense>.
@@ -28,14 +56,7 @@ export async function serverApi<T>(path: string): Promise<T> {
     cache: "no-store",
   };
 
-  // No Render Free a API dorme e responde 502/503/504 enquanto acorda (1–2 min). ~2,5 min no total.
-  let res = await fetch(`${API_URL}/api${path}`, init);
-  for (const delay of [2_000, 4_000, 8_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000]) {
-    if (![502, 503, 504].includes(res.status)) break;
-    await res.text().catch(() => "");
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    res = await fetch(`${API_URL}/api${path}`, init);
-  }
+  const res = await fetchWaking(`${API_URL}/api${path}`, init);
 
   if (!res.ok) {
     // Lê o corpo antes de sair: resposta abandonada com "Connection: close" derruba o parser do fetch do Node.
