@@ -82,8 +82,8 @@ async function MyTeam() {
         <TeamLive team={team} round={round} multiplier={data.cestinha_multiplier} />
       ) : (
         <EmptyState title="VOCÊ NÃO ESCALOU TIME NESTA RODADA">
-          O mercado da próxima rodada abre quando esta fechar. Volte para montar seu time: 2 armadores, 2 alas, 1 pivô e o cestinha, que
-          pontua em dobro.
+          O mercado reabre quando esta rodada for apurada, depois do último jogo. Volte para montar seu time: 2 armadores, 2 alas, 1 pivô
+          e o cestinha, que pontua em dobro.
         </EmptyState>
       )}
     </>

@@ -149,8 +149,10 @@ it('o mercado fecha 10 minutos antes do primeiro jogo da rodada', function () {
     expect(app(FantasyMarket::class)->lockStarted())->toBe(1)
         ->and($this->r4->fresh()->market_status)->toBe(Round::LOCKED);
 
-    // O time da rodada 4 não muda mais.
-    $this->putJson('/api/fantasy/team', lineup(['cestinha_id' => 2]))->assertOk()->assertJsonPath('data.cestinha_id', 2);
+    // A rodada 5 não abre antes da apuração: o mercado fica fechado.
+    $this->putJson('/api/fantasy/team', lineup(['cestinha_id' => 2]))->assertUnprocessable()
+        ->assertJsonFragment(['O mercado está fechado: a rodada já vai começar.']);
+    expect($this->r5->fresh()->market_status)->toBe(Round::UPCOMING);
     expect(FantasyTeam::where('round_id', $this->r4->id)->value('cestinha_id'))->toBe(1);
 });
 
@@ -166,13 +168,14 @@ it('depois do horário de fechamento não salva, mesmo com o agendador atrasado'
         ->assertJsonFragment(['O mercado está fechado: a rodada já vai começar.']);
 });
 
-it('ao fechar, abre o mercado da próxima rodada com os preços provisórios', function () {
+it('exceção: fantasy:open-early abre a próxima rodada com os preços provisórios', function () {
     app(FantasyMarket::class)->open($this->r4);
     $this->actingAs($this->ana);
     $this->putJson('/api/fantasy/team', lineup())->assertOk();
 
     Carbon::setTestNow(Carbon::parse('2026-11-09 18:50', 'America/New_York'));
     app(FantasyMarket::class)->lockStarted();
+    test()->artisan('fantasy:open-early', ['round' => 4])->expectsOutputToContain('Rodada 5 aberta com preços provisórios')->assertSuccessful();
 
     expect($this->r5->fresh()->market_status)->toBe(Round::OPEN)
         ->and(PlayerPrice::where('round_id', $this->r5->id)->pluck('price', 'player_id')->map(fn ($p) => (float) $p)->all())
@@ -197,6 +200,7 @@ it('o time pré-montado é reprecificado na apuração e avisa se passar do orç
 
     Carbon::setTestNow(Carbon::parse('2026-11-09 23:00', 'America/New_York'));
     app(FantasyMarket::class)->lockStarted();
+    test()->artisan('fantasy:open-early', ['round' => 4])->assertSuccessful();
 
     // Rodada 5 montada com preços provisórios (19 cada) e o patrimônio do time da 4 (100).
     $this->putJson('/api/fantasy/team', ['players' => [3, 2, 6, 5, 8], 'cestinha_id' => 6])->assertOk()
@@ -238,7 +242,7 @@ it('mostra a parcial com jogo ao vivo, cestinha em dobro', function () {
         PlayerGameStat::create(['game_id' => $this->monday->id, 'player_id' => $id, 'team_id' => Player::find($id)->team_id, 'pts' => $pts]);
     }
 
-    $team = $this->getJson('/api/fantasy/team')->assertOk()->json('data.previous.team'); // a rodada 5 já abriu
+    $team = $this->getJson('/api/fantasy/team')->assertOk()->json('data.team');
     // 10 × 2 (cestinha) + 4 + 6
     expect($team['points'])->toEqual(30)
         ->and($team['players'][0])->toMatchArray(['points' => 20, 'live' => true, 'cestinha' => true]);
@@ -315,7 +319,7 @@ it('os acertos de palpite nos jogos da rodada viram boost nos pontos do time', f
     GameFinished::dispatch($this->monday);
 
     // Acertou vencedor (+1%) e MVP (+3%), errou a margem: boost de 4% já aparece na parcial.
-    $team = $this->getJson('/api/fantasy/team')->assertOk()->json('data.previous.team'); // a rodada 5 já abriu
+    $team = $this->getJson('/api/fantasy/team')->assertOk()->json('data.team');
     expect($team['base_points'])->toEqual(174)
         ->and($team['boost'])->toMatchArray(['value' => 0.04, 'calls' => 1, 'cap' => 0.3, 'hits' => ['winner' => 1, 'margin' => 0, 'mvp' => 1]])
         ->and($team['points'])->toEqual(180.96);

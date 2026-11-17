@@ -70,25 +70,19 @@ class FantasyMarket
         return $priced;
     }
 
-    /**
-     * Fecha os mercados que chegaram no horário de fechamento e já abre o da rodada seguinte, para
-     * ninguém ficar sem poder escalar enquanto a rodada rola.
-     */
+    /** Fecha os mercados que chegaram no horário de fechamento (minutos antes do primeiro jogo). */
     public function lockStarted(): int
     {
         return Round::where('market_status', Round::OPEN)->get()
             ->filter(fn (Round $r) => ($at = $this->lockAt($r)) && $at->lte(now()))
-            ->each(function (Round $r) {
-                $r->update(['market_status' => Round::LOCKED]);
-                $this->openNextEarly($r);
-            })
+            ->each(fn (Round $r) => $r->update(['market_status' => Round::LOCKED]))
             ->count();
     }
 
     /**
-     * Abre o mercado da rodada seguinte com os preços da rodada que acabou de fechar, como
-     * provisórios. A apuração (RoundSettlement) grava os preços novos por cima e reprecifica os
-     * times já salvos.
+     * Exceção, só na mão (fantasy:open-early): abre o mercado da rodada seguinte antes da apuração
+     * desta, com os preços desta como provisórios. A apuração (RoundSettlement) grava os preços
+     * novos por cima e reprecifica os times já salvos. O normal é abrir na apuração.
      */
     public function openNextEarly(Round $round): void
     {
