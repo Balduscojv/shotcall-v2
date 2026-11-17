@@ -53,7 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('me/verification-email', [EmailVerificationController::class, 'resend'])->middleware('throttle:3,1');
 
     // Foto de perfil e banner
-    Route::post('me/{kind}', [ProfileMediaController::class, 'update'])->whereIn('kind', ['avatar', 'banner'])->middleware('throttle:20,1');
+    // Banner só os do jogo (prêmios): upload é só da foto de perfil.
+    Route::post('me/{kind}', [ProfileMediaController::class, 'update'])->whereIn('kind', ['avatar'])->middleware('throttle:20,1');
     Route::delete('me/{kind}', [ProfileMediaController::class, 'destroy'])->whereIn('kind', ['avatar', 'banner']);
 
     // Calendário e jogos da NBA

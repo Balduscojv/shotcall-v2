@@ -53,9 +53,10 @@ it('troca e remove foto e banner, recortando para o tamanho certo', function () 
     [$w, $h] = getimagesizefromstring(Storage::disk('public')->get($path));
     expect([$w, $h])->toBe([512, 512]);
 
+    // Banner é só o do jogo (prêmio): upload recusado.
     $this->actingAs($this->ana)
         ->post('/api/me/banner', ['image' => UploadedFile::fake()->image('quadra.png', 1600, 900)], ['Accept' => 'application/json'])
-        ->assertOk()->assertJsonPath('data.banner_url', fn ($url) => str_starts_with($url, '/storage/banners/'));
+        ->assertMethodNotAllowed();
 
     $this->actingAs($this->ana)->deleteJson('/api/me/avatar')->assertOk()->assertJsonPath('data.avatar_url', null);
     Storage::disk('public')->assertMissing($path);
@@ -68,7 +69,7 @@ it('recusa imagem pequena ou que não é imagem', function () {
         ->post('/api/me/avatar', ['image' => UploadedFile::fake()->image('mini.png', 50, 50)], ['Accept' => 'application/json'])
         ->assertUnprocessable()->assertJsonValidationErrors('image');
     $this->actingAs($this->ana)
-        ->post('/api/me/banner', ['image' => UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf')], ['Accept' => 'application/json'])
+        ->post('/api/me/avatar', ['image' => UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf')], ['Accept' => 'application/json'])
         ->assertUnprocessable();
 });
 

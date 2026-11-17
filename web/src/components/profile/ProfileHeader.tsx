@@ -25,19 +25,11 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
     <section aria-label={`Perfil de ${profile.name}`} className="flex flex-col gap-6">
       <div className="relative">
         <div className="relative aspect-[1200/280] min-h-36 w-full overflow-hidden rounded-b-3xl border-x-[3px] border-b-[3px] border-ink bg-[#1C1730] sm:rounded-3xl sm:border-[3px] sm:shadow-hard-lg">
-          {/* Vale a última escolha: banner-prêmio em uso, senão a imagem enviada, senão a grade padrão. */}
+          {/* Banner é só o do jogo (prêmio em uso); sem nenhum, a grade padrão. */}
           {banner ? (
             <div className={`size-full ${banner.className}`} style={banner.style} aria-hidden="true" />
-          ) : profile.banner_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- imagem do usuário servida pelo Laravel
-            <img src={profile.banner_url} alt="" className="size-full object-cover" />
           ) : (
             <div className="fence size-full bg-[#1C1730]" aria-hidden="true" />
-          )}
-          {own && (
-            <div className="absolute top-3 right-3">
-              <ImageControl kind="banner" hasImage={!!profile.banner_url} look="chip" />
-            </div>
           )}
         </div>
         <div className="absolute -bottom-12 left-4 sm:-bottom-[72px] sm:left-10">

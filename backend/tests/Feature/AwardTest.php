@@ -145,12 +145,15 @@ it('só admin mexe nos prêmios dos outros', function () {
     $this->deleteJson('/api/admin/users/ana/cosmetics/welcome-title')->assertForbidden();
 });
 
-it('enviar um banner próprio tira o banner-prêmio de uso', function () {
+it('banner é só o do jogo: não dá para enviar um próprio, e o banner-prêmio continua', function () {
     Storage::fake('public');
     signUp('ana');
+    $equipped = User::where('handle', 'ana')->first()->equipped_banner_id;
 
     $this->post('/api/me/banner', ['image' => UploadedFile::fake()->image('b.jpg', 1600, 500)], ['Accept' => 'application/json'])
-        ->assertOk()->assertJsonPath('data.banner_url', fn ($url) => $url !== null);
+        ->assertMethodNotAllowed();
 
-    expect(User::where('handle', 'ana')->first()->equipped_banner_id)->toBeNull();
+    expect(User::where('handle', 'ana')->first())
+        ->equipped_banner_id->toBe($equipped)
+        ->banner_url->toBeNull();
 });
