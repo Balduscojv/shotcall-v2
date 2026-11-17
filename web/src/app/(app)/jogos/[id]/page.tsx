@@ -47,12 +47,18 @@ async function GameView({ params }: Pick<PageProps<"/jogos/[id]">, "params">) {
     </span>
   );
 
-  const teamName = (team: Team) => (
-    <span className="flex items-center gap-2.5">
-      <TeamLogo team={team} size={48} />
-      <span className="flex flex-col">
+  // No celular o logo vai em cima da sigla (cabe na coluna); no computador, ao lado. Espelhado:
+  // visitante com o logo à esquerda, mandante à direita.
+  const teamName = (team: Team, side: "home" | "away") => (
+    <span
+      className={`flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2.5 ${
+        side === "home" ? "items-end text-right sm:flex-row-reverse" : "items-start"
+      }`}
+    >
+      <TeamLogo team={team} size={44} />
+      <span className={`flex min-w-0 flex-col ${side === "home" ? "items-end" : ""}`}>
         <span className="font-display text-xl leading-none drop-shadow-[2px_2px_0_var(--color-ink)] sm:text-2xl">{team.tricode}</span>
-        <span className="text-xs font-bold text-chalk/85 sm:text-sm">
+        <span className="text-xs font-bold break-words text-chalk/85 sm:text-sm">
           {team.city} {team.name}
         </span>
       </span>
@@ -72,12 +78,12 @@ async function GameView({ params }: Pick<PageProps<"/jogos/[id]">, "params">) {
         style={{ background: matchupGradient(game) }}
       >
         <span className="absolute inset-0 bg-ink/25" aria-hidden="true" />
-        <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:gap-5">
-            {teamName(game.away)}
+        <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
+          <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-end sm:gap-5">
+            {teamName(game.away, "away")}
             {scored && score("away")}
           </div>
-          <div className="flex flex-col items-center gap-2 text-center">
+          <div className="flex max-w-[8.5rem] flex-col items-center gap-2 text-center sm:max-w-none">
             {live ? (
               <LiveBadge />
             ) : (
@@ -88,9 +94,9 @@ async function GameView({ params }: Pick<PageProps<"/jogos/[id]">, "params">) {
             {live && <span className="font-score text-2xl tabular-nums sm:text-3xl">{statusLine(game, day)}</span>}
             {where && <span className="rounded-full bg-ink/55 px-2.5 py-0.5 text-xs font-bold">{where}</span>}
           </div>
-          <div className="flex flex-col-reverse items-end gap-2 text-right sm:flex-row sm:items-end sm:gap-5">
+          <div className="flex min-w-0 flex-col-reverse items-end gap-2 text-right sm:flex-row sm:items-end sm:gap-5">
             {scored && score("home")}
-            {teamName(game.home)}
+            {teamName(game.home, "home")}
           </div>
         </div>
       </section>
