@@ -6,6 +6,7 @@ use App\Models\League;
 use App\Services\Missions\Conditions\CestinhaPointsCondition;
 use App\Services\Missions\Conditions\ClutchCondition;
 use App\Services\Missions\Conditions\Condition;
+use App\Services\Missions\Conditions\EmailVerifiedCondition;
 use App\Services\Missions\Conditions\FriendsLeaguesCondition;
 use App\Services\Missions\Conditions\LeagueRankCondition;
 use App\Services\Missions\Conditions\LeagueSeasonCondition;
@@ -29,6 +30,7 @@ class ConditionCatalog
         LeagueRankCondition::class,
         LeagueWinsCondition::class,
         LeagueSeasonCondition::class,
+        EmailVerifiedCondition::class,
     ];
 
     /** @return array<string, Condition> por chave */

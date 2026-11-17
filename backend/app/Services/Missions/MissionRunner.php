@@ -25,6 +25,8 @@ class MissionRunner
 
     public const FRIENDSHIP_ACCEPTED = 'friendship_accepted';
 
+    public const EMAIL_VERIFIED = 'email_verified';
+
     public function __construct(private AwardService $awards, private ConditionCatalog $catalog) {}
 
     /** @return int quantos prêmios foram liberados */
@@ -46,6 +48,11 @@ class MissionRunner
     public function friendshipAccepted(User $a, User $b): int
     {
         return $this->run(self::FRIENDSHIP_ACCEPTED, [$a, $b]);
+    }
+
+    public function emailVerified(User $user): int
+    {
+        return $user->hasVerifiedEmail() ? $this->run(self::EMAIL_VERIFIED, $user) : 0;
     }
 
     /**

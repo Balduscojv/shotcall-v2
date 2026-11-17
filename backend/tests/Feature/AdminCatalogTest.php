@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Cosmetics\AwardService;
 use App\Services\Missions\MissionRunner;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -193,4 +194,21 @@ it('edita e apaga missão sem tirar o prêmio de quem já cumpriu', function () 
 
     $this->actingAs($this->admin)->deleteJson("/api/admin/missions/{$mission->id}")->assertOk();
     expect($this->ana->cosmetics()->where('key', 'mission-splash-brothers')->exists())->toBeTrue();
+});
+
+it('missão de e-mail confirmado: premia quem já confirmou ao criar e quem confirma depois', function () {
+    $key = newTitle(['name' => 'Verificado']);
+    $carla = User::factory()->unverified()->create(['handle' => 'carla']);
+
+    $this->actingAs($this->admin)->postJson('/api/admin/missions', [
+        'name' => 'Confirme o e-mail', 'condition' => 'email_verified', 'params' => [], 'rewards' => [$key],
+    ])->assertCreated()->assertJsonPath('meta.granted', 3); // admin, Ana e Bia já confirmaram
+
+    $has = fn (User $u) => $u->cosmetics()->where('key', $key)->exists();
+    expect($has($this->ana))->toBeTrue()->and($has($carla))->toBeFalse()
+        ->and(app(MissionRunner::class)->emailVerified($carla))->toBe(0);
+
+    $carla->markEmailAsVerified();
+    event(new Verified($carla));
+    expect($has($carla))->toBeTrue();
 });

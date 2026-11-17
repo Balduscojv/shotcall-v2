@@ -7,6 +7,7 @@ use App\Models\Cosmetic;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\Cosmetics\AwardService;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -95,6 +96,7 @@ class SocialLoginController extends Controller
                     $user->forceFill(['password' => Str::random(40), 'remember_token' => Str::random(60)]);
                 }
                 $user->markEmailAsVerified();
+                event(new Verified($user));
             }
             $user->socialAccounts()->create(['provider' => 'google', 'provider_id' => $google->getId()]);
 
