@@ -7,8 +7,9 @@ export async function AdminNavLink() {
   if (me.role !== "admin") return null;
 
   return (
-    <Link href="/admin/usuarios" className="inline-flex h-11 items-center px-3 font-bold text-chalk no-underline hover:text-lime">
-      Moderação
+    <Link href="/admin/usuarios" className="inline-flex h-11 items-center px-2 font-bold whitespace-nowrap text-chalk no-underline hover:text-lime sm:px-3">
+      <span className="sm:hidden">Admin</span>
+      <span className="hidden sm:inline">Moderação</span>
     </Link>
   );
 }

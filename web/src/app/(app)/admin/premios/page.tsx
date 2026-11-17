@@ -48,14 +48,14 @@ async function Catalog() {
             <h2 id={`h-${slot}`} className="font-display text-lg">
               {slotLabel[slot].toUpperCase()} <span className="text-subtle">· {items.length}</span>
             </h2>
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,170px),1fr))] gap-4">
               {items.map((item) => (
                 <li
                   key={item.key}
                   className={`flex flex-col gap-3 rounded-2xl border-[3px] border-ink bg-panel p-4 ${item.active ? "" : "opacity-70"}`}
                 >
                   <CosmeticPreview cosmetic={item} />
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className={`rounded-md border-2 border-ink px-2 py-0.5 font-display text-[11px] ${rarityStyle[item.rarity]}`}>
                       {rarityLabel[item.rarity].toUpperCase()}
                     </span>
@@ -72,7 +72,7 @@ async function Catalog() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
                     <ActiveToggle active={item.active} path={`/admin/cosmetics/${encodeURIComponent(item.key)}`} method="POST" label={item.name} />
                     <Link href={`/admin/premios/${encodeURIComponent(item.key)}`} className={buttonClass("outline", "md", "h-10 px-4 text-sm")}>
                       Editar

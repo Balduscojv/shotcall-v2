@@ -213,7 +213,7 @@ export function MissionForm({
           return (
             <fieldset key={slot} className="flex flex-col gap-2">
               <legend className="mb-2 text-sm font-bold text-muted">{slotLabel[slot]}</legend>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-3">
                 {items.map((item) => {
                   const checked = rewards.includes(item.key);
                   return (

@@ -324,26 +324,31 @@ export function TeamBuilder({
                     {p.name}
                   </Link>
                   <span className="text-xs text-subtle">
-                    {t?.tricode} · {roleOf(p)} · média {p.average === null ? "—" : fpoints(p.average)} · {p.games_in_round} {p.games_in_round === 1 ? "jogo" : "jogos"} na rodada
+                    {t?.tricode} · {roleOf(p)} · média {p.average === null ? "—" : fpoints(p.average)} · {p.games_in_round}{" "}
+                    {p.games_in_round === 1 ? "jogo" : "jogos"}
+                    <span className="hidden sm:inline"> na rodada</span>
                   </span>
                 </span>
-                <span className="flex shrink-0 flex-col items-end">
-                  <span className="font-score text-lg leading-none">{fmoney(p.price)}</span>
-                  {p.variation !== 0 && (
-                    <span className={`text-[11px] font-extrabold ${p.variation > 0 ? "text-lime" : "text-pink"}`}>{fvariation(p.variation)}</span>
-                  )}
+                {/* No celular, preço em cima e botão embaixo: sobra largura para o nome. */}
+                <span className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                  <span className="flex flex-col items-end">
+                    <span className="font-score text-lg leading-none">{fmoney(p.price)}</span>
+                    {p.variation !== 0 && (
+                      <span className={`text-[11px] font-extrabold ${p.variation > 0 ? "text-lime" : "text-pink"}`}>{fvariation(p.variation)}</span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={mine}
+                    onClick={() => choose(p)}
+                    aria-label={mine ? `${p.name} já está no time` : `Escalar ${p.name} por ${fmoney(p.price)}`}
+                    className={`h-9 w-[76px] shrink-0 rounded-xl text-xs font-extrabold sm:h-10 sm:w-[84px] ${
+                      mine ? "bg-surface text-subtle" : afford ? "border-2 border-ink bg-lime text-ink" : "border-2 border-surface text-subtle hover:text-chalk"
+                    }`}
+                  >
+                    {mine ? "No time" : afford ? "Escalar" : "Sem saldo"}
+                  </button>
                 </span>
-                <button
-                  type="button"
-                  disabled={mine}
-                  onClick={() => choose(p)}
-                  aria-label={mine ? `${p.name} já está no time` : `Escalar ${p.name} por ${fmoney(p.price)}`}
-                  className={`h-10 w-[84px] shrink-0 rounded-xl text-xs font-extrabold ${
-                    mine ? "bg-surface text-subtle" : afford ? "border-2 border-ink bg-lime text-ink" : "border-2 border-surface text-subtle hover:text-chalk"
-                  }`}
-                >
-                  {mine ? "No time" : afford ? "Escalar" : "Sem saldo"}
-                </button>
               </li>
             );
           })}

@@ -45,7 +45,8 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
         </div>
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-4 pt-12 sm:pt-0 sm:pl-[200px]">
+      {/* No celular o banner vai de ponta a ponta; o resto ganha a margem lateral da página. */}
+      <div className="flex flex-wrap items-start justify-between gap-4 px-4 pt-12 sm:px-0 sm:pt-0 sm:pl-[200px]">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="font-display text-[clamp(26px,3.5vw,40px)] leading-tight break-words">{profile.name}</h1>
           <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted">
@@ -73,9 +74,15 @@ export async function ProfileHeader({ params }: { params: Promise<{ handle: stri
         )}
       </div>
 
-      {profile.trophies.length > 0 && <TrophyShelf trophies={profile.trophies} />}
+      {profile.trophies.length > 0 && (
+        <div className="px-4 sm:px-0">
+          <TrophyShelf trophies={profile.trophies} />
+        </div>
+      )}
 
-      <ProfileTabs handle={profile.handle!} counts={profile.counts} />
+      <div className="px-4 sm:px-0">
+        <ProfileTabs handle={profile.handle!} counts={profile.counts} />
+      </div>
     </section>
   );
 }
@@ -84,11 +91,11 @@ export function ProfileHeaderSkeleton() {
   return (
     <div className="flex flex-col gap-6" aria-hidden="true">
       <div className="aspect-[1200/280] min-h-36 w-full animate-pulse rounded-b-3xl bg-panel sm:rounded-3xl" />
-      <div className="flex flex-col gap-3 pt-12 sm:pt-0 sm:pl-[200px]">
+      <div className="flex flex-col gap-3 px-4 pt-12 sm:px-0 sm:pt-0 sm:pl-[200px]">
         <div className="h-9 w-64 max-w-full animate-pulse rounded-lg bg-panel" />
         <div className="h-5 w-40 animate-pulse rounded-lg bg-panel" />
       </div>
-      <div className="h-11 w-full max-w-xl animate-pulse rounded-full bg-panel" />
+      <div className="mx-4 h-11 max-w-xl animate-pulse rounded-full bg-panel sm:mx-0" />
     </div>
   );
 }

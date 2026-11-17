@@ -24,15 +24,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </Suspense>
             <LogoutButton />
           </div>
-          <nav aria-label="Principal" className="-mx-2 flex w-full items-center justify-between gap-0.5 sm:mx-0 sm:ml-auto sm:w-auto sm:justify-end sm:gap-3">
+          <nav
+            aria-label="Principal"
+            className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between gap-0.5 overflow-x-auto sm:mx-0 sm:ml-auto sm:w-auto sm:justify-end sm:gap-3 sm:overflow-visible"
+          >
             <Suspense fallback={null}>
               <AdminNavLink />
             </Suspense>
+            {/* No celular, rótulos curtos para o menu caber numa linha sem empurrar a página. */}
             <Link href="/jogos" className={navLink}>
-              Calendário
+              <span className="sm:hidden">Jogos</span>
+              <span className="hidden sm:inline">Calendário</span>
             </Link>
             <Link href="/time" className={navLink}>
-              Escale seu time
+              <span className="sm:hidden">Time</span>
+              <span className="hidden sm:inline">Escale seu time</span>
             </Link>
             <Link href="/ligas" className={navLink}>
               Ligas
