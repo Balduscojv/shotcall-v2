@@ -28,9 +28,9 @@ export async function serverApi<T>(path: string): Promise<T> {
     cache: "no-store",
   };
 
-  // No Render Free a API dorme e responde 502/503/504 enquanto acorda (até ~1 min).
+  // No Render Free a API dorme e responde 502/503/504 enquanto acorda (1–2 min). ~2,5 min no total.
   let res = await fetch(`${API_URL}/api${path}`, init);
-  for (const delay of [2_000, 4_000, 8_000, 15_000, 15_000, 15_000]) {
+  for (const delay of [2_000, 4_000, 8_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000, 15_000]) {
     if (![502, 503, 504].includes(res.status)) break;
     await res.text().catch(() => "");
     await new Promise((resolve) => setTimeout(resolve, delay));
