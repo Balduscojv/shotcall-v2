@@ -93,3 +93,7 @@ services:
         value: production
       - key: API_URL
         value: https://shotcall-api.onrender.com
+      # O servidor do Next se apresenta ao Sanctum com esta origem (lib/server-api.ts).
+      # Sem ela vira localhost:3000, a sessão é ignorada e o login volta para /entrar.
+      - key: APP_URL
+        value: https://shotcall-web.onrender.com
