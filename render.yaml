@@ -16,8 +16,10 @@ services:
         value: production
       - key: APP_DEBUG
         value: "false"
+      # Gere com `php artisan key:generate --show`. O generateValue do Render não
+      # tem o prefixo "base64:" e o Laravel recusa a chave.
       - key: APP_KEY
-        generateValue: true
+        sync: false
       - key: APP_URL
         value: https://shotcall-api.onrender.com
       - key: FRONTEND_URL
