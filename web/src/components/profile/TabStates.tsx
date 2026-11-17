@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { HoopLoader } from "@/components/ui/HoopLoader";
 
 /** Aba sem conteúdo ainda: explica o que vai aparecer e, se fizer sentido, o que fazer. */
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
@@ -10,12 +11,7 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
   );
 }
 
+/** Carregando: a bola girando no aro (HoopLoader). */
 export function TabSkeleton() {
-  return (
-    <div className="flex flex-col gap-3" aria-hidden="true">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="h-20 animate-pulse rounded-2xl bg-panel" />
-      ))}
-    </div>
-  );
+  return <HoopLoader />;
 }

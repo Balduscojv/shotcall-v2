@@ -271,6 +271,51 @@
     inset 0 0 0 1.5px var(--color-ink);
 }
 
+/*
+ * HoopLoader: a bola dá a volta no aro (elipse rx 43, ry 25, um pouco por dentro do aro) em 1,6 s. O x vai e volta em 0,8 s e
+ * o y também, defasado 1/4 de volta: 0–0,8 s a bola passa pela frente do aro, 0,8–1,6 s por trás.
+ */
+.hoop-orbit-x {
+  animation: hoop-x 0.8s ease-in-out infinite alternate;
+}
+.hoop-orbit-y {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    hoop-y 0.8s ease-in-out -0.4s infinite alternate,
+    hoop-front 1.6s linear infinite;
+}
+.hoop-orbit-y.hoop-ball-back {
+  animation:
+    hoop-y 0.8s ease-in-out -0.4s infinite alternate,
+    hoop-back 1.6s linear infinite;
+}
+.hoop-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hoop-spin 0.7s linear infinite;
+}
+@keyframes hoop-x {
+  from { transform: translateX(-43px); }
+  to { transform: translateX(43px); }
+}
+@keyframes hoop-y {
+  /* Atrás fica menor (mais longe); na frente, tamanho cheio. */
+  from { transform: translateY(-20px) scale(0.85); }
+  to { transform: translateY(24px) scale(1); }
+}
+@keyframes hoop-front {
+  0%, 49.9% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+@keyframes hoop-back {
+  0%, 49.9% { opacity: 0; }
+  50%, 100% { opacity: 1; }
+}
+@keyframes hoop-spin {
+  to { transform: rotate(360deg); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
