@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
-import { api, ApiError } from "@/lib/api";
+import { useEffect, useState, type FormEvent } from "react";
+import { api, ApiError, wakeApi } from "@/lib/api";
 import { buttonClass } from "@/components/ui/button";
 import { Field, FormAlert } from "@/components/ui/Field";
 import { safeReturnPath } from "./returnPath";
@@ -12,6 +12,9 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<ApiError | null>(null);
   const [pending, setPending] = useState(false);
+
+  // A API pode estar dormindo (Render Free): acorda enquanto a pessoa digita.
+  useEffect(wakeApi, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

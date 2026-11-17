@@ -17,7 +17,7 @@ export async function serverApi<T>(path: string): Promise<T> {
   const remembered = jar.getAll().some((c) => c.name.startsWith("remember_web_"));
   if (!jar.has(SESSION_COOKIE) && !remembered) redirect("/entrar");
 
-  const res = await fetch(`${API_URL}/api${path}`, {
+  const init: RequestInit = {
     headers: {
       Accept: "application/json",
       Cookie: jar.toString(),
@@ -26,7 +26,16 @@ export async function serverApi<T>(path: string): Promise<T> {
       Referer: `${APP_URL}/`,
     },
     cache: "no-store",
-  });
+  };
+
+  // No Render Free a API dorme e responde 502/503/504 enquanto acorda (até ~1 min).
+  let res = await fetch(`${API_URL}/api${path}`, init);
+  for (const delay of [2_000, 4_000, 8_000, 15_000, 15_000, 15_000]) {
+    if (![502, 503, 504].includes(res.status)) break;
+    await res.text().catch(() => "");
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    res = await fetch(`${API_URL}/api${path}`, init);
+  }
 
   if (!res.ok) {
     // Lê o corpo antes de sair: resposta abandonada com "Connection: close" derruba o parser do fetch do Node.

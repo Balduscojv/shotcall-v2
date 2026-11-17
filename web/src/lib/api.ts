@@ -23,11 +23,36 @@ function readCookie(name: string): string | undefined {
   return match ? decodeURIComponent(match.slice(name.length + 1)) : undefined;
 }
 
+// No plano grátis do Render a API dorme sem uso e leva até ~1 min para acordar. Enquanto isso o
+// Render responde 502/503/504 sem a requisição chegar ao Laravel, então repetir é seguro.
+const WAKING_STATUS = new Set([502, 503, 504]);
+const WAKING_DELAYS_MS = [2_000, 4_000, 6_000, 8_000, 10_000, 15_000, 15_000];
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchWaking(input: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const last = attempt >= WAKING_DELAYS_MS.length;
+    try {
+      const res = await fetch(input, init);
+      if (last || !WAKING_STATUS.has(res.status)) return res;
+    } catch (e) {
+      if (last) throw e;
+    }
+    await sleep(WAKING_DELAYS_MS[attempt]);
+  }
+}
+
 async function ensureCsrf(): Promise<string | undefined> {
   if (!readCookie("XSRF-TOKEN")) {
-    await fetch("/sanctum/csrf-cookie", { credentials: "same-origin" });
+    await fetchWaking("/sanctum/csrf-cookie", { credentials: "same-origin" });
   }
   return readCookie("XSRF-TOKEN");
+}
+
+/** Acorda a API em segundo plano (telas de login e cadastro, enquanto a pessoa digita). */
+export function wakeApi(): void {
+  void ensureCsrf().catch(() => undefined);
 }
 
 export async function api<T = unknown>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
@@ -44,7 +69,7 @@ export async function api<T = unknown>(path: string, init: { method?: string; bo
 
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetchWaking(`/api${path}`, {
       method,
       headers,
       credentials: "same-origin",
