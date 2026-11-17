@@ -9,12 +9,13 @@ use App\Services\Nba\ScheduleSync;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Throwable;
 
 /**
  * Sincroniza na mão. Sem opções: elencos, calendário e depois todo jogo que já começou e não
  * tem resultado salvo (útil na primeira vez e depois de um tempo sem o agendador rodando).
  */
-#[Signature('nba:sync {--schedule : só o calendário} {--rosters : só os elencos} {--game= : só este jogo} {--refresh : refaz também os jogos já encerrados}')]
+#[Signature('nba:sync {--schedule : só o calendário} {--rosters : só os elencos} {--game= : só este jogo} {--refresh : refaz também os jogos já encerrados} {--games : só os jogos pendentes, sem elencos e calendário}')]
 #[Description('Puxa elencos, calendário e jogos da NBA da fonte configurada (NBA_PROVIDER)')]
 class NbaSync extends Command
 {
@@ -33,21 +34,36 @@ class NbaSync extends Command
             return self::SUCCESS;
         }
 
-        $this->info($rosters->run().' jogador(es) nos elencos.');
-        if ($this->option('rosters')) {
-            return self::SUCCESS;
-        }
+        if (! $this->option('games')) {
+            $this->info($rosters->run().' jogador(es) nos elencos.');
+            if ($this->option('rosters')) {
+                return self::SUCCESS;
+            }
 
-        $this->info($schedule->run().' jogo(s) no calendário.');
-        if ($this->option('schedule')) {
-            return self::SUCCESS;
+            $this->info($schedule->run().' jogo(s) no calendário.');
+            if ($this->option('schedule')) {
+                return self::SUCCESS;
+            }
         }
 
         $statuses = $this->option('refresh') ? ['SCHEDULED', 'LIVE', 'FINAL'] : ['SCHEDULED', 'LIVE'];
         $pending = Game::whereIn('status', $statuses)->where('start_time', '<=', now())->orderBy('start_time')->get();
-        $this->withProgressBar($pending, fn (Game $game) => $games->sync($game));
+
+        // Um jogo com erro na fonte não pode travar os seguintes: registra e segue.
+        $failed = 0;
+        $this->withProgressBar($pending, function (Game $game) use ($games, &$failed) {
+            try {
+                $games->sync($game);
+            } catch (Throwable $e) {
+                $failed++;
+                report($e);
+            }
+        });
         $this->newLine();
-        $this->info($pending->count().' jogo(s) atualizado(s).');
+        $this->info(($pending->count() - $failed).' jogo(s) atualizado(s).');
+        if ($failed > 0) {
+            $this->warn("{$failed} jogo(s) falharam; ficam pendentes para a próxima vez.");
+        }
 
         return self::SUCCESS;
     }
