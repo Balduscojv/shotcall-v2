@@ -1,5 +1,8 @@
-# Acorda a API no Render Free nos horários de sincronização e durante os jogos.
-# A lógica de quando acordar fica em scripts/keep_awake.py.
+# Acorda a API e o site no Render Free no horário de uso, e só a API nos horários de
+# sincronização e durante os jogos. A lógica de quando acordar fica em scripts/keep_awake.py.
+#
+# Horário de uso: variável do repositório HORARIO_USO (Settings > Secrets and variables >
+# Actions > Variables), em horas de Brasília, ex.: "18-24" ou "20-2". Vazia, vale 18-24.
 name: Keep API awake
 
 on:
@@ -10,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: "Acordar a API mesmo fora dos horários"
+        description: "Acordar a API e o site mesmo fora dos horários"
         type: boolean
         default: false
 
@@ -32,3 +35,4 @@ jobs:
       - run: python scripts/keep_awake.py
         env:
           FORCE_PING: ${{ inputs.force }}
+          HORARIO_USO: ${{ vars.HORARIO_USO }}
