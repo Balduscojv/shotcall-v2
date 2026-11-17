@@ -8,6 +8,10 @@ services:
     plan: free
     dockerfilePath: ./backend/Dockerfile.production
     dockerContext: ./backend
+    # Só redeploya quando o backend muda (sem isso, todo push reinicia a API).
+    buildFilter:
+      paths:
+        - backend/**
     healthCheckPath: /up
     envVars:
       - key: APP_NAME
@@ -83,6 +87,9 @@ services:
     runtime: node
     plan: free
     rootDir: ./web
+    buildFilter:
+      paths:
+        - web/**
     # NODE_ENV=production faria o npm ci pular as devDependencies (Tailwind, TypeScript),
     # que o next build precisa.
     buildCommand: npm ci --include=dev && npm run build

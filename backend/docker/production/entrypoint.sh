@@ -12,6 +12,10 @@ if [ "${RUN_MIGRATIONS:-true}" = "true" ]; then
   php artisan migrate --force --no-interaction
 fi
 
+# Instância única: no boot nenhuma tarefa agendada está rodando, então qualquer trava de
+# withoutOverlapping no Redis sobrou de um container que morreu no meio da tarefa.
+php artisan schedule:clear-cache || true
+
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
