@@ -12,10 +12,13 @@ on:
     - cron: "*/10 * * * *"
   workflow_dispatch:
     inputs:
+      # Marcado por padrão: quem roda na mão quer o site acordado agora. Um agendador externo
+      # (ex.: cron-job.org) que dispare este workflow deve mandar {"inputs":{"force":"false"}},
+      # senão acorda tudo a cada disparo e estoura as horas grátis do Render.
       force:
         description: "Acordar a API e o site mesmo fora dos horários"
         type: boolean
-        default: false
+        default: true
 
 concurrency:
   group: keep-awake
